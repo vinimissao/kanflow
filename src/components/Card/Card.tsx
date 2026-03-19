@@ -6,6 +6,19 @@ type CardProps = {
   onSelect?: (cardId: string) => void
 }
 
+function getDifficultyBadge(difficulty: KanbanCard['difficulty']) {
+  switch (difficulty) {
+    case 'Baixa':
+      return 'bg-green-50 text-green-700'
+    case 'Média':
+      return 'bg-indigo-50 text-indigo-700'
+    case 'Alta':
+      return 'bg-red-50 text-red-700'
+    default:
+      return 'bg-gray-50 text-gray-700'
+  }
+}
+
 function getTransformStyle(transform: { x: number; y: number; scaleX?: number; scaleY?: number } | null) {
   if (!transform) return undefined
   const scaleX = transform.scaleX ?? 1
@@ -18,6 +31,9 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
     id: card.id,
     data: { type: 'card', cardId: card.id, status: card.status },
   })
+
+  const totalChecklist = card.checklists.length
+  const doneChecklist = card.checklists.filter((item) => item.done).length
 
   return (
     <article
@@ -38,6 +54,14 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
           <span className="mt-1 inline-flex rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
             {card.assignee}
           </span>
+          <span
+            className={[
+              'ml-2 mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium',
+              getDifficultyBadge(card.difficulty),
+            ].join(' ')}
+          >
+            {card.difficulty}
+          </span>
         </div>
 
         <button
@@ -57,6 +81,10 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
       </div>
       <p className="mt-2 max-h-10 overflow-hidden text-xs leading-relaxed text-gray-600">
         {card.description}
+      </p>
+      <p className="mt-2 text-[11px] text-gray-500">
+        {totalChecklist > 0 ? `Checklist: ${doneChecklist}/${totalChecklist}` : 'Checklist: 0'} •{' '}
+        {card.comments.length} comentário{card.comments.length === 1 ? '' : 's'}
       </p>
     </article>
   )

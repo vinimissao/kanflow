@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/core'
 
 import { columns, initialCards } from '../data/initialData'
-import type { ColumnStatus, KanbanCard } from '../types'
+import type { CardDifficulty, ColumnStatus, KanbanCard } from '../types'
 
 const columnStatusSet = new Set<ColumnStatus>(columns.map((c) => c.status))
 
@@ -86,21 +86,30 @@ export function useKanban() {
     title: string
     description: string
     assignee: string
+    difficulty: CardDifficulty
+    developmentTime: string
     status: ColumnStatus
   }) => {
     const trimmedTitle = input.title.trim()
     const trimmedDescription = input.description.trim()
     const trimmedAssignee = input.assignee.trim()
+    const trimmedDevelopmentTime = input.developmentTime.trim()
 
     if (!trimmedTitle) return
     if (!trimmedDescription) return
     if (!trimmedAssignee) return
+    if (!input.difficulty) return
+    if (!trimmedDevelopmentTime) return
 
     const newCard: KanbanCard = {
       id: createId(),
       title: trimmedTitle,
       description: trimmedDescription,
       assignee: trimmedAssignee,
+      difficulty: input.difficulty,
+      developmentTime: trimmedDevelopmentTime,
+      checklists: [],
+      comments: [],
       status: input.status,
     }
 
@@ -113,6 +122,93 @@ export function useKanban() {
 
     setCards((prev) =>
       prev.map((card) => (card.id === cardId ? { ...card, assignee: nextAssignee } : card)),
+    )
+  }
+
+  const updateCardDetails = (
+    cardId: string,
+    patch: {
+      assignee?: string
+      difficulty?: CardDifficulty
+      developmentTime?: string
+    },
+  ) => {
+    const nextAssignee = patch.assignee?.trim()
+    const nextDevelopmentTime = patch.developmentTime?.trim()
+    const nextDifficulty = patch.difficulty
+
+    if (
+      patch.assignee !== undefined &&
+      (nextAssignee === undefined || nextAssignee === '')
+    )
+      return
+    if (
+      patch.developmentTime !== undefined &&
+      (nextDevelopmentTime === undefined || nextDevelopmentTime === '')
+    )
+      return
+    if (patch.difficulty !== undefined && !nextDifficulty) return
+
+    setCards((prev) =>
+      prev.map((card) => {
+        if (card.id !== cardId) return card
+        return {
+          ...card,
+          ...(nextAssignee !== undefined ? { assignee: nextAssignee } : {}),
+          ...(nextDifficulty !== undefined ? { difficulty: nextDifficulty } : {}),
+          ...(nextDevelopmentTime !== undefined ? { developmentTime: nextDevelopmentTime } : {}),
+        }
+      }),
+    )
+  }
+
+  const addChecklistItem = (cardId: string, text: string) => {
+    const trimmedText = text.trim()
+    if (!trimmedText) return
+
+    setCards((prev) =>
+      prev.map((card) => {
+        if (card.id !== cardId) return card
+        return {
+          ...card,
+          checklists: [
+            { id: createId(), text: trimmedText, done: false },
+            ...card.checklists,
+          ],
+        }
+      }),
+    )
+  }
+
+  const toggleChecklistItem = (cardId: string, itemId: string) => {
+    setCards((prev) =>
+      prev.map((card) => {
+        if (card.id !== cardId) return card
+        return {
+          ...card,
+          checklists: card.checklists.map((item) =>
+            item.id === itemId ? { ...item, done: !item.done } : item,
+          ),
+        }
+      }),
+    )
+  }
+
+  const addCardComment = (cardId: string, text: string) => {
+    const trimmedText = text.trim()
+    if (!trimmedText) return
+
+    const comment = {
+      id: createId(),
+      text: trimmedText,
+      createdAt: Date.now(),
+    }
+
+    setCards((prev) =>
+      prev.map((card) => {
+        if (card.id !== cardId) return card
+        return { ...card, comments: [comment, ...card.comments] }
+      }),
     )
   }
 
@@ -129,6 +225,10 @@ export function useKanban() {
     handleDragCancel,
     addCard,
     updateCardAssignee,
+    updateCardDetails,
+    addChecklistItem,
+    toggleChecklistItem,
+    addCardComment,
   }
 }
 

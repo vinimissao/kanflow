@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useDroppable } from '@dnd-kit/core'
-import type { ColumnStatus, KanbanCard } from '../../types'
+import type { CardDifficulty, ColumnStatus, KanbanCard } from '../../types'
 import KanbanCardView from '../Card/Card'
 
 type ColumnProps = {
@@ -14,6 +14,8 @@ type ColumnProps = {
     title: string
     description: string
     assignee: string
+    difficulty: CardDifficulty
+    developmentTime: string
     status: ColumnStatus
   }) => void
 }
@@ -37,11 +39,15 @@ export default function Column({
   const [formTitle, setFormTitle] = useState('')
   const [formDescription, setFormDescription] = useState('')
   const [formAssignee, setFormAssignee] = useState('')
+  const [formDifficulty, setFormDifficulty] = useState<CardDifficulty>('Média')
+  const [formDevelopmentTime, setFormDevelopmentTime] = useState('')
 
   const resetForm = () => {
     setFormTitle('')
     setFormDescription('')
     setFormAssignee('')
+    setFormDifficulty('Média')
+    setFormDevelopmentTime('')
   }
 
   const submit = (e: FormEvent) => {
@@ -50,6 +56,8 @@ export default function Column({
       title: formTitle,
       description: formDescription,
       assignee: formAssignee,
+      difficulty: formDifficulty,
+      developmentTime: formDevelopmentTime,
       status,
     })
     resetForm()
@@ -103,6 +111,21 @@ export default function Column({
               value={formAssignee}
               onChange={(e) => setFormAssignee(e.target.value)}
               placeholder="Responsável"
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
+            />
+            <select
+              value={formDifficulty}
+              onChange={(e) => setFormDifficulty(e.target.value as CardDifficulty)}
+              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
+            >
+              <option value="Baixa">Baixa</option>
+              <option value="Média">Média</option>
+              <option value="Alta">Alta</option>
+            </select>
+            <input
+              value={formDevelopmentTime}
+              onChange={(e) => setFormDevelopmentTime(e.target.value)}
+              placeholder="Tempo de desenvolvimento (ex: 8 horas)"
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
             />
 
