@@ -1,4 +1,11 @@
+import { useState } from 'react'
 import Board from '../components/Board/Board'
+import { useKanban } from '../hooks/useKanban'
+import {
+  SidebarMenu,
+  WorkspacePanel,
+  type WorkspaceSection,
+} from '../components/Workspace/ManagementPanels'
 
 type HomeProps = {
   userName?: string
@@ -6,6 +13,9 @@ type HomeProps = {
 }
 
 export default function Home({ userName, onLogout }: HomeProps) {
+  const kanban = useKanban()
+  const [section, setSection] = useState<WorkspaceSection>('board')
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="border-b bg-white">
@@ -40,7 +50,16 @@ export default function Home({ userName, onLogout }: HomeProps) {
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6">
-        <Board />
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+          <SidebarMenu selected={section} onSelect={setSection} />
+
+          <div className="min-w-0 flex-1 space-y-4">
+            {section === 'board' ? <Board kanban={kanban} /> : null}
+            {section !== 'board' ? (
+              <WorkspacePanel selected={section} cards={kanban.cards} />
+            ) : null}
+          </div>
+        </div>
       </main>
     </div>
   )

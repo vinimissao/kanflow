@@ -17,7 +17,11 @@ function getDifficultyBadge(difficulty: CardDifficulty) {
   }
 }
 
-export default function Board() {
+type BoardProps = {
+  kanban: ReturnType<typeof useKanban>
+}
+
+export default function Board({ kanban }: BoardProps) {
   const {
     cards,
     columns,
@@ -34,7 +38,7 @@ export default function Board() {
     addChecklistItem,
     toggleChecklistItem,
     addCardComment,
-  } = useKanban()
+  } = kanban
 
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null)
   const selectedCard = useMemo(
