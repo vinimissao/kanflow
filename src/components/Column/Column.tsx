@@ -68,55 +68,59 @@ export default function Column({
     <section
       ref={setNodeRef}
       className={[
-        'min-w-[280px] flex-1 rounded-2xl bg-gray-50',
-        'border border-gray-100 p-3',
-        'transition-colors',
-        isOver ? 'ring-2 ring-indigo-500' : 'ring-0',
+        'flex min-w-[300px] flex-1 flex-col rounded-2xl border border-gray-200/70 bg-white/50 p-4',
+        'shadow-sm shadow-gray-900/5 transition-colors duration-200',
+        isOver ? 'ring-2 ring-fuchsia-400/50 ring-offset-2 ring-offset-[#F4F5F7]' : 'ring-0',
       ].join(' ')}
     >
-      <div className="flex items-center justify-between gap-2 px-1">
+      <div className="flex items-center justify-between gap-3 px-0.5">
         <div className="flex min-w-0 items-center gap-2">
-          <h2 className="truncate text-sm font-semibold text-gray-900">{title}</h2>
+          <h2 className="truncate text-xs font-semibold uppercase tracking-wider text-gray-500">
+            {title}
+          </h2>
           <button
             type="button"
             onClick={() => setIsAdding(true)}
             aria-label={`Adicionar card em ${title}`}
-            className="flex h-7 w-7 items-center justify-center rounded-xl border border-dashed border-indigo-200 bg-white/60 text-lg font-semibold text-indigo-700 transition hover:bg-white"
+            className="flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-base font-medium text-gray-500 transition hover:border-fuchsia-300 hover:text-fuchsia-600"
           >
             +
           </button>
         </div>
-        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[11px] text-gray-600">
+        <span className="shrink-0 rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-gray-500">
           {cards.length}
         </span>
       </div>
 
       {isAdding ? (
-        <form onSubmit={submit} className="mt-3 rounded-2xl border border-gray-200 bg-white p-3">
-          <div className="flex flex-col gap-2">
+        <form
+          onSubmit={submit}
+          className="mt-4 rounded-2xl border border-gray-200/80 bg-white p-4 shadow-card"
+        >
+          <div className="flex flex-col gap-2.5">
             <input
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
               placeholder="Título"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
             <textarea
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
               placeholder="Descrição"
               rows={3}
-              className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
+              className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
             <input
               value={formAssignee}
               onChange={(e) => setFormAssignee(e.target.value)}
               placeholder="Responsável"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
             <select
               value={formDifficulty}
               onChange={(e) => setFormDifficulty(e.target.value as CardDifficulty)}
-              className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             >
               <option value="Baixa">Baixa</option>
               <option value="Média">Média</option>
@@ -126,13 +130,13 @@ export default function Column({
               value={formDevelopmentTime}
               onChange={(e) => setFormDevelopmentTime(e.target.value)}
               placeholder="Tempo de desenvolvimento (ex: 8 horas)"
-              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none ring-0 focus:border-indigo-400"
+              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-1">
               <button
                 type="submit"
-                className="flex-1 rounded-xl bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+                className="flex-1 rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95"
               >
                 Criar
               </button>
@@ -142,7 +146,7 @@ export default function Column({
                   resetForm()
                   setIsAdding(false)
                 }}
-                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50"
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
               >
                 Cancelar
               </button>
@@ -151,19 +155,18 @@ export default function Column({
         </form>
       ) : null}
 
-      <div className="mt-3 flex flex-col gap-2">
+      <div className="mt-4 flex flex-col gap-3">
         {cards.map((card) => (
           <KanbanCardView key={card.id} card={card} onSelect={onSelectCard} />
         ))}
 
         {showPlaceholder ? (
-          <div className="rounded-xl border-2 border-dashed border-indigo-300 bg-indigo-50 p-3">
-            <h3 className="text-sm font-semibold text-indigo-900">{activeCard?.title}</h3>
-            <p className="mt-1 text-xs text-indigo-800">Solte aqui para mover</p>
+          <div className="rounded-2xl border-2 border-dashed border-fuchsia-300/60 bg-fuchsia-50/50 p-4">
+            <h3 className="text-sm font-bold text-gray-900">{activeCard?.title}</h3>
+            <p className="mt-1 text-xs font-medium text-fuchsia-700">Solte aqui para mover</p>
           </div>
         ) : null}
       </div>
     </section>
   )
 }
-

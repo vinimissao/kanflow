@@ -11,7 +11,7 @@ import {
 } from '@dnd-kit/core'
 
 import { columns, initialCards } from '../data/initialData'
-import type { CardDifficulty, ColumnStatus, KanbanCard } from '../types'
+import type { CardDifficulty, ColumnStatus, CompletedSprintRecord, KanbanCard } from '../types'
 
 const columnStatusSet = new Set<ColumnStatus>(columns.map((c) => c.status))
 
@@ -20,8 +20,13 @@ function isColumnStatus(value: unknown): value is ColumnStatus {
   return columnStatusSet.has(value as ColumnStatus)
 }
 
+function cloneCards(cards: KanbanCard[]): KanbanCard[] {
+  return structuredClone(cards)
+}
+
 export function useKanban() {
   const [cards, setCards] = useState<KanbanCard[]>(initialCards)
+  const [completedSprints, setCompletedSprints] = useState<CompletedSprintRecord[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overColumn, setOverColumn] = useState<ColumnStatus | null>(null)
 
@@ -212,8 +217,33 @@ export function useKanban() {
     )
   }
 
+  /** Finaliza a sprint atual: grava snapshot no histórico e zera o quadro. */
+  const completeSprint = () => {
+    const snapshot = cloneCards(cards)
+    setCompletedSprints((prev) => {
+      const record: CompletedSprintRecord = {
+        id: createId(),
+        name: `Sprint ${prev.length + 1}`,
+        endedAt: Date.now(),
+        cards: snapshot,
+      }
+      return [...prev, record]
+    })
+    setCards([])
+    setActiveId(null)
+    setOverColumn(null)
+  }
+
+  /** Novo quadro em branco sem registrar sprint finalizada (descarta o quadro atual). */
+  const createBlankBoard = () => {
+    setCards([])
+    setActiveId(null)
+    setOverColumn(null)
+  }
+
   return {
     cards,
+    completedSprints,
     columns,
     sensors,
     activeCard,
@@ -229,6 +259,8 @@ export function useKanban() {
     addChecklistItem,
     toggleChecklistItem,
     addCardComment,
+    completeSprint,
+    createBlankBoard,
   }
 }
 

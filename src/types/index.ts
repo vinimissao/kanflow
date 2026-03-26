@@ -38,3 +38,11 @@ export type KanbanColumn = {
   title: string
 }
 
+/** Snapshot de uma sprint finalizada (quadro completo no momento do “Complete Sprint”). */
+export type CompletedSprintRecord = {
+  id: string
+  name: string
+  endedAt: number
+  cards: KanbanCard[]
+}
+
