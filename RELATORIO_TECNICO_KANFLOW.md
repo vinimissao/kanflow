@@ -27,8 +27,6 @@
 5. Apêndice A - Termo de uso  
 6. Apêndice B - Política de privacidade  
 
-> Observação: atualizar o número das páginas na versão final após a diagramação.
-
 ---
 
 ## Resumo Executivo
