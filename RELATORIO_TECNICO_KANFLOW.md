@@ -4,10 +4,8 @@
 
 **Empresa (equipe):** FlowLabs Tecnologia  
 **Projeto/Solução:** Kanflow - Plataforma Web de Gestão Ágil de Tarefas  
-**Integrantes:** [Inserir nome completo de todos os integrantes]  
+**Integrantes:** Bruno Silva Costa, Gustavo Guimarães Pardini, João Victor Amaro, Victor Hugo Santos, Vinicius Missão
 **Ano:** 2026  
-
-> Observação: inserir logomarca da empresa (FlowLabs Tecnologia) e logomarca do projeto (Kanflow) na versão final diagramada.
 
 ---
 
