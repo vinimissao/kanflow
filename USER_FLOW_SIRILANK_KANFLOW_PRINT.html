@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Flow - Kanflow</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #111827;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --canvas: #f4f5f7;
+        --accent: #d946ef;
+        --accent2: #7c3aed;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, system-ui, Segoe UI, Roboto, sans-serif;
+        color: var(--ink);
+        background: white;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      @page {
+        size: A4;
+        margin: 14mm 16mm;
+      }
+      .page {
+        width: 100%;
+        padding: 8mm 0;
+      }
+      .page-break {
+        page-break-after: always;
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 18pt;
+        font-weight: 800;
+      }
+      h2 {
+        margin: 0 0 10px;
+        font-size: 12.5pt;
+        font-weight: 800;
+      }
+      p {
+        margin: 0;
+        font-size: 10.5pt;
+        color: var(--muted);
+        line-height: 1.35;
+      }
+      .meta {
+        margin-top: 6mm;
+        padding: 10pt 12pt;
+        background: #f9fafb;
+        border: 1px solid #eef2f7;
+        border-radius: 14px;
+      }
+      .meta strong {
+        color: var(--ink);
+      }
+      .diagram-box {
+        margin-top: 8mm;
+        background: var(--card);
+        border: 1px solid #eef2f7;
+        border-radius: 16px;
+        padding: 10pt;
+      }
+      .diagram-box .legend {
+        margin-top: 8pt;
+        padding-top: 6pt;
+        border-top: 1px solid #f0f2f5;
+      }
+      .legend ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .legend li {
+        font-size: 9.8pt;
+        color: var(--muted);
+        line-height: 1.3;
+        margin: 3px 0;
+      }
+      .desc {
+        margin-top: 8mm;
+        padding: 0;
+      }
+      .desc h3 {
+        margin: 0 0 6pt;
+        font-size: 11.5pt;
+      }
+      .desc ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .desc li {
+        font-size: 10.2pt;
+        color: var(--muted);
+        line-height: 1.35;
+        margin: 4px 0;
+      }
+      .step-title {
+        color: var(--ink);
+        font-weight: 700;
+        margin-top: 6pt;
+      }
+      /* Mermaid sizing */
+      svg {
+        max-width: 100%;
+        height: auto;
+      }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  </head>
+  <body>
+    <!-- PAGE 1 -->
+    <section class="page">
+      <h1>User Flow - Kanflow</h1>
+      <p>
+        Grupo: <strong>Sirilank</strong> &nbsp; | &nbsp; Projeto: <strong>Kanflow</strong>
+      </p>
+      <div class="meta">
+        <p>
+          Documento para postagem no Blackboard (formato PDF).
+        </p>
+      </div>
+
+      <div class="diagram-box">
+        <h2>Diagrama do User Flow</h2>
+        <div class="mermaid">
+flowchart TD
+  A[Início - Acessar Kanflow] --> B{Usuário já tem conta?}
+  B -- Não --> C[Cadastro]
+  C --> C1[Preenche: Nome, E-mail, Senha]
+  C1 --> C2{Campos válidos?}
+  C2 -- Não --> C1
+  C2 -- Sim --> D[Cadastro concluído]
+  D --> E[Login automático ou Redireciona para Login]
+
+  B -- Sim --> F[Login]
+  F --> F1[Preenche: Nome/E-mail e Senha]
+  F1 --> F2{Campos válidos?}
+  F2 -- Não --> F1
+  F2 -- Sim --> G[Home / Workspace]
+
+  G --> H[Sidebar de menus]
+  H --> I{Seleciona seção}
+  I -- Quadro (Sprint board) --> J[Kanban]
+  J --> K[Ver colunas e cards]
+  K --> L{Criar card?}
+  L -- Sim --> M[Botão + na coluna]
+  M --> N[Formulário: título, descrição, responsável, dificuldade, tempo]
+  N --> O{Campos obrigatórios preenchidos?}
+  O -- Não --> N
+  O -- Sim --> P[Card é criado na coluna]
+
+  K --> Q{Mover card?}
+  Q -- Drag and Drop --> R[Soltar na coluna destino]
+  R --> S[Status do card é atualizado]
+
+  P --> T{Seleciona card?}
+  S --> T
+  T -- Sim --> U[Modal do card]
+  U --> V[Editar detalhes: responsável, dificuldade, tempo]
+  V --> W[Gerenciar checklist: adicionar e marcar]
+  W --> X[Gerenciar comentários: adicionar]
+
+  T --> Y{Complete Sprint?}
+  Y -- Quadro vazio --> Y1[Alerta: não pode finalizar sem cards]
+  Y -- Confirmar --> Z[Confirma: salva no histórico e zera quadro]
+  Z --> Z2[Abrir novo quadro em branco]
+
+  J --> AA{Novo quadro (sem finalizar)?}
+  AA -- Cancelar --> J
+  AA -- Confirmar --> AB[Descarta quadro atual sem salvar sprint]
+  AB --> AC[Abrir quadro em branco]
+
+  I -- Performance/Evolução/Sprints/Contribuidores --> AD[WorkspacePanel]
+  AD --> AE[Exibe indicadores e histórico atualizado]
+        </div>
+
+        <div class="legend">
+          <p style="margin-top: 0; color: var(--ink); font-weight: 700;">Legenda (curta)</p>
+          <ul>
+            <li><strong>Drag & Drop</strong>: muda o status do card entre colunas.</li>
+            <li><strong>Modal do card</strong>: edição de detalhes, checklist e comentários.</li>
+            <li><strong>Complete Sprint</strong>: valida quadro, salva snapshot no histórico e abre novo quadro.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <div class="page-break"></div>
+
+    <!-- PAGE 2 -->
+    <section class="page">
+      <h1>Descrição do Fluxo</h1>
+      <p>Resumo passo a passo do user flow do protótipo do grupo.</p>
+
+      <div class="desc">
+        <h3>1) Atores</h3>
+        <ul>
+          <li><strong>Colaborador</strong>: cria/atualiza cards, movimenta cards e usa o modal.</li>
+          <li><strong>Gestor</strong>: além do colaborador, acessa painéis gerenciais.</li>
+        </ul>
+
+        <h3 style="margin-top: 10pt;">2) Etapas principais</h3>
+        <ul>
+          <li><span class="step-title">Acessar o sistema</span>: entrar no Kanflow.</li>
+          <li><span class="step-title">Login/Cadastro</span>: se não houver conta, preencher Cadastro; caso contrário, Login.</li>
+          <li><span class="step-title">Home/Workspace</span>: navegar pela sidebar e selecionar a seção.</li>
+          <li><span class="step-title">Kanban</span>: criar card pelo botão “+”, preencher formulário e visualizar nas colunas.</li>
+          <li><span class="step-title">Movimentação</span>: arrastar e soltar o card em outra coluna para atualizar o status.</li>
+          <li><span class="step-title">Detalhes</span>: abrir o modal ao selecionar um card e editar checklist e comentários.</li>
+          <li><span class="step-title">Complete Sprint</span>: valida quadro vazio; confirma e registra sprint no histórico; abre novo quadro em branco.</li>
+          <li><span class="step-title">Novo quadro</span>: descarta o quadro atual sem salvar no histórico (com confirmação).</li>
+          <li><span class="step-title">Painéis gerenciais</span>: Performance, Evolução e Lista de Sprints refletem o histórico atualizado.</li>
+        </ul>
+      </div>
+
+      <div class="meta" style="margin-top: 10mm;">
+        <p>
+          Dica para postagem: apenas um integrante realiza o upload do PDF no Blackboard.
+        </p>
+      </div>
+    </section>
+
+    <script>
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+      (async function () {
+        try {
+          await mermaid.run({ querySelector: '.mermaid' });
+        } catch (e) {
+          // Falha de renderizacao nao deve impedir a geracao do PDF.
+          console.error(e);
+        }
+
+        // Pequeno delay para garantir que o layout e SVGs estejam prontos antes do print.
+        setTimeout(() => {
+          window.print();
+        }, 500);
+      })();
+    </script>
+  </body>
+</html>
+

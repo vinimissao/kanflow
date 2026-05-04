@@ -1,4 +1,13 @@
 import { useState } from 'react'
+import {
+  authMe,
+  displayNameFromMePayload,
+  HttpError,
+  isApiConfigured,
+  loginAndStoreToken,
+  setSessionUserId,
+  userIdFromMePayload,
+} from '../api'
 
 type LoginProps = {
   onLogin: (name: string) => void
@@ -9,6 +18,7 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
   const [nameOrEmail, setNameOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-[#F4F5F7] px-4">
@@ -26,7 +36,7 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
 
           <form
             className="mt-6 flex flex-col gap-4"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault()
               setError(null)
 
@@ -40,6 +50,26 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
                 return
               }
 
+              if (isApiConfigured()) {
+                setLoading(true)
+                try {
+                  await loginAndStoreToken({ email: name, password })
+                  const me = await authMe()
+                  setSessionUserId(userIdFromMePayload(me))
+                  const display = displayNameFromMePayload(me)
+                  onLogin(display)
+                } catch (err) {
+                  const msg =
+                    err instanceof HttpError
+                      ? err.message
+                      : 'Não foi possível entrar. Verifique os dados e a API.'
+                  setError(msg)
+                } finally {
+                  setLoading(false)
+                }
+                return
+              }
+
               onLogin(name)
             }}
           >
@@ -49,6 +79,7 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
                 value={nameOrEmail}
                 onChange={(e) => setNameOrEmail(e.target.value)}
                 placeholder="Ex: Vinicius ou vinicius@email.com"
+                autoComplete="username"
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
               />
             </div>
@@ -60,6 +91,7 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
               />
             </div>
@@ -72,9 +104,10 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
 
             <button
               type="submit"
-              className="mt-1 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-fuchsia-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95 active:scale-[0.98]"
+              disabled={loading}
+              className="mt-1 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-fuchsia-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
             >
-              Entrar
+              {loading ? 'Entrando…' : 'Entrar'}
             </button>
 
             <button
@@ -90,4 +123,3 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
     </div>
   )
 }
-

@@ -231,5 +231,142 @@ export const initialCards: KanbanCard[] = [
     comments: [],
     status: asStatus('done'),
   },
+
+  // --- Roadmap do produto (estado do front vs próximos passos) ---
+  {
+    id: 'meta-done-stack',
+    title: '[Feito] Shell React + Vite + Tailwind',
+    description:
+      'App.tsx com fluxo Login/Cadastro/Home; tema consistente; sem backend.',
+    assignee: 'Front',
+    difficulty: 'Baixa',
+    developmentTime: '—',
+    checklists: [
+      { id: 'cl-meta-stack-1', text: 'Vite + TS configurados', done: true },
+      { id: 'cl-meta-stack-2', text: 'Tailwind + layout Home/Board', done: true },
+    ],
+    comments: [],
+    status: asStatus('done'),
+  },
+  {
+    id: 'meta-done-kanban',
+    title: '[Feito] Quadro Kanban + DnD entre colunas',
+    description:
+      'Colunas por ColumnStatus; Board/Column/Card; @dnd-kit atualiza status ao soltar; useKanban em memória.',
+    assignee: 'Front',
+    difficulty: 'Média',
+    developmentTime: '—',
+    checklists: [
+      { id: 'cl-meta-kanban-1', text: '7 colunas + cards filtrados por status', done: true },
+      { id: 'cl-meta-kanban-2', text: 'Drag entre colunas (sem position)', done: true },
+    ],
+    comments: [],
+    status: asStatus('done'),
+  },
+  {
+    id: 'meta-done-paineis',
+    title: '[Feito] Painéis + sprint local (snapshot)',
+    description:
+      'ManagementPanels com métricas e histórico; Complete Sprint e Novo quadro só no estado local.',
+    assignee: 'Front',
+    difficulty: 'Média',
+    developmentTime: '—',
+    checklists: [
+      { id: 'cl-meta-painel-1', text: 'completedSprints + UI de sprints', done: true },
+      { id: 'cl-meta-painel-2', text: 'Sem persistência no servidor', done: true },
+    ],
+    comments: [],
+    status: asStatus('done'),
+  },
+  {
+    id: 'meta-dev-api',
+    title: '[Em andamento] Integrar API de cards e sprint',
+    description:
+      'Substituir useKanban local por GET/PATCH/move + endpoints de workspace e sprint; loading/erro/toast.',
+    assignee: 'Full-stack',
+    difficulty: 'Alta',
+    developmentTime: 'várias iterações',
+    checklists: [
+      { id: 'cl-meta-api-1', text: 'Cliente HTTP + tipos alinhados ao backend', done: false },
+      { id: 'cl-meta-api-2', text: 'Sincronizar Complete Sprint / Blank board', done: false },
+    ],
+    comments: [],
+    status: asStatus('inDev'),
+  },
+  {
+    id: 'meta-dev-workspace',
+    title: '[Em andamento] Workspace ativo (workspaceId)',
+    description:
+      'Front não tem workspace hoje; precisa resolver/criar workspace e passar workspaceId em todas as chamadas.',
+    assignee: 'Full-stack',
+    difficulty: 'Alta',
+    developmentTime: '—',
+    checklists: [
+      { id: 'cl-meta-ws-1', text: 'GET/POST workspaces + estado global', done: false },
+      { id: 'cl-meta-ws-2', text: 'Cards sempre com workspace_id', done: false },
+    ],
+    comments: [],
+    status: asStatus('inDev'),
+  },
+  {
+    id: 'meta-backlog-busca',
+    title: '[A fazer] Busca do header funcional',
+    description:
+      'Campo de busca em Home só é UI; falta filtrar cards no client ou GET .../search?q=.',
+    assignee: 'Front',
+    difficulty: 'Baixa',
+    developmentTime: '2–4 h',
+    checklists: [
+      { id: 'cl-meta-busca-1', text: 'Definir contrato com backend', done: false },
+      { id: 'cl-meta-busca-2', text: 'Estado de filtro ou debounce na API', done: false },
+    ],
+    comments: [],
+    status: asStatus('backlog'),
+  },
+  {
+    id: 'meta-backlog-position',
+    title: '[A fazer] Ordem dentro da coluna (position)',
+    description:
+      'Backend pode ter position; front hoje não reordena na mesma coluna nem envia índice.',
+    assignee: 'Front',
+    difficulty: 'Alta',
+    developmentTime: '—',
+    checklists: [
+      { id: 'cl-meta-pos-1', text: 'Sort por position no render', done: false },
+      { id: 'cl-meta-pos-2', text: 'DnD intra-coluna + POST move', done: false },
+    ],
+    comments: [],
+    status: asStatus('backlog'),
+  },
+  {
+    id: 'meta-planned-auth',
+    title: '[Planejado] Auth real (JWT) e papéis',
+    description:
+      'Trocar nome em localStorage por login seguro, convites e regras por plano (admin/coordenador).',
+    assignee: 'Back + Front',
+    difficulty: 'Alta',
+    developmentTime: '—',
+    checklists: [
+      { id: 'cl-meta-auth-1', text: 'Login/register na API', done: false },
+      { id: 'cl-meta-auth-2', text: 'Guardar token e refresh', done: false },
+    ],
+    comments: [],
+    status: asStatus('planned'),
+  },
+  {
+    id: 'meta-planned-termo',
+    title: '[Planejado] Termo de uso e planos na UI',
+    description:
+      'Publicar TERMO_DE_USO_KANFLOW.md no app; aceite; limites Free/Básico/Full conforme negócio.',
+    assignee: 'Produto + Front',
+    difficulty: 'Média',
+    developmentTime: '—',
+    checklists: [
+      { id: 'cl-meta-termo-1', text: 'Modal ou página /termos', done: false },
+      { id: 'cl-meta-termo-2', text: 'Checkbox no cadastro', done: false },
+    ],
+    comments: [],
+    status: asStatus('planned'),
+  },
 ]
 

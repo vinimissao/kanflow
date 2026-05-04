@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   type DragCancelEvent,
   type DragEndEvent,
@@ -10,6 +10,22 @@ import {
   useSensors,
 } from '@dnd-kit/core'
 
+import {
+  blankWorkspaceBoard,
+  completeWorkspaceSprint,
+  createCard,
+  createChecklistItem,
+  createComentario,
+  getSessionUserId,
+  listCards,
+  listWorkspaceSprints,
+  mapUnknownToKanbanCards,
+  mapUnknownToCompletedSprints,
+  moveCard,
+  parseTempoEstimadoHoras,
+  patchCard,
+  updateChecklistItem,
+} from '../api'
 import { columns, initialCards } from '../data/initialData'
 import type { CardDifficulty, ColumnStatus, CompletedSprintRecord, KanbanCard } from '../types'
 
@@ -24,8 +40,18 @@ function cloneCards(cards: KanbanCard[]): KanbanCard[] {
   return structuredClone(cards)
 }
 
-export function useKanban() {
-  const [cards, setCards] = useState<KanbanCard[]>(initialCards)
+export type UseKanbanOptions = {
+  /** Obrigatório para sincronizar com o servidor. */
+  workspaceId?: string | null
+  /** Quando true e `workspaceId` definido, usa os endpoints `/api/*`. */
+  remote?: boolean
+}
+
+export function useKanban(options?: UseKanbanOptions) {
+  const workspaceId = options?.workspaceId ?? null
+  const remote = Boolean(options?.remote && workspaceId)
+
+  const [cards, setCards] = useState<KanbanCard[]>(() => (remote ? [] : initialCards))
   const [completedSprints, setCompletedSprints] = useState<CompletedSprintRecord[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overColumn, setOverColumn] = useState<ColumnStatus | null>(null)
@@ -40,6 +66,39 @@ export function useKanban() {
     () => (activeId ? cards.find((c) => c.id === activeId) ?? null : null),
     [cards, activeId],
   )
+
+  const refreshCards = useCallback(async () => {
+    if (!remote || !workspaceId) return
+    const raw = await listCards(workspaceId)
+    setCards(mapUnknownToKanbanCards(raw))
+  }, [remote, workspaceId])
+
+  const refreshSprints = useCallback(async () => {
+    if (!remote || !workspaceId) return
+    const raw = await listWorkspaceSprints(workspaceId)
+    setCompletedSprints(mapUnknownToCompletedSprints(raw))
+  }, [remote, workspaceId])
+
+  useEffect(() => {
+    if (!remote || !workspaceId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const [rawCards, rawSprints] = await Promise.all([
+          listCards(workspaceId),
+          listWorkspaceSprints(workspaceId),
+        ])
+        if (cancelled) return
+        setCards(mapUnknownToKanbanCards(rawCards))
+        setCompletedSprints(mapUnknownToCompletedSprints(rawSprints))
+      } catch (e) {
+        console.error(e)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [remote, workspaceId])
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id))
@@ -64,6 +123,20 @@ export function useKanban() {
 
     if (!overId || !isColumnStatus(overId)) return
     if (nextActiveId === '') return
+
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          await moveCard(nextActiveId, {
+            status: overId,
+          })
+          await refreshCards()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
 
     setCards((prev) =>
       prev.map((card) => {
@@ -106,6 +179,29 @@ export function useKanban() {
     if (!input.difficulty) return
     if (!trimmedDevelopmentTime) return
 
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          const horas = parseTempoEstimadoHoras(trimmedDevelopmentTime)
+          await createCard({
+            titulo: trimmedTitle,
+            descricao: trimmedDescription || null,
+            dificuldade: input.difficulty,
+            tempoEstimado: horas > 0 ? horas : null,
+            status: input.status,
+            responsavelId: null,
+            workspaceId,
+            posicao: 0,
+            assignee: trimmedAssignee || null,
+          })
+          await refreshCards()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
+
     const newCard: KanbanCard = {
       id: createId(),
       title: trimmedTitle,
@@ -124,6 +220,18 @@ export function useKanban() {
   const updateCardAssignee = (cardId: string, assignee: string) => {
     const nextAssignee = assignee.trim()
     if (!nextAssignee) return
+
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          await patchCard(cardId, { assignee: nextAssignee })
+          await refreshCards()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
 
     setCards((prev) =>
       prev.map((card) => (card.id === cardId ? { ...card, assignee: nextAssignee } : card)),
@@ -154,6 +262,25 @@ export function useKanban() {
       return
     if (patch.difficulty !== undefined && !nextDifficulty) return
 
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          const body: Record<string, unknown> = {}
+          if (nextAssignee !== undefined) body.assignee = nextAssignee
+          if (nextDifficulty !== undefined) body.dificuldade = nextDifficulty
+          if (nextDevelopmentTime !== undefined) {
+            const th = parseTempoEstimadoHoras(nextDevelopmentTime)
+            body.tempoEstimado = th > 0 ? th : null
+          }
+          await patchCard(cardId, body)
+          await refreshCards()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
+
     setCards((prev) =>
       prev.map((card) => {
         if (card.id !== cardId) return card
@@ -171,6 +298,18 @@ export function useKanban() {
     const trimmedText = text.trim()
     if (!trimmedText) return
 
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          await createChecklistItem(cardId, { texto: trimmedText, concluido: false })
+          await refreshCards()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
+
     setCards((prev) =>
       prev.map((card) => {
         if (card.id !== cardId) return card
@@ -186,6 +325,24 @@ export function useKanban() {
   }
 
   const toggleChecklistItem = (cardId: string, itemId: string) => {
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          const card = cards.find((c) => c.id === cardId)
+          const item = card?.checklists.find((i) => i.id === itemId)
+          const next = item ? !item.done : true
+          await updateChecklistItem(cardId, itemId, {
+            texto: item?.text ?? '',
+            concluido: next,
+          })
+          await refreshCards()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
+
     setCards((prev) =>
       prev.map((card) => {
         if (card.id !== cardId) return card
@@ -203,6 +360,23 @@ export function useKanban() {
     const trimmedText = text.trim()
     if (!trimmedText) return
 
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          const autorId = getSessionUserId()
+          if (!autorId) {
+            window.alert('Sessão sem ID de usuário. Faça login novamente.')
+            return
+          }
+          await createComentario(cardId, { autorId, texto: trimmedText })
+          await refreshCards()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
+
     const comment = {
       id: createId(),
       text: trimmedText,
@@ -217,8 +391,20 @@ export function useKanban() {
     )
   }
 
-  /** Finaliza a sprint atual: grava snapshot no histórico e zera o quadro. */
   const completeSprint = () => {
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          await completeWorkspaceSprint(workspaceId)
+          await refreshCards()
+          await refreshSprints()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
+
     const snapshot = cloneCards(cards)
     setCompletedSprints((prev) => {
       const record: CompletedSprintRecord = {
@@ -234,8 +420,20 @@ export function useKanban() {
     setOverColumn(null)
   }
 
-  /** Novo quadro em branco sem registrar sprint finalizada (descarta o quadro atual). */
   const createBlankBoard = () => {
+    if (remote && workspaceId) {
+      ;(async () => {
+        try {
+          await blankWorkspaceBoard(workspaceId)
+          await refreshCards()
+          await refreshSprints()
+        } catch (e) {
+          console.error(e)
+        }
+      })()
+      return
+    }
+
     setCards([])
     setActiveId(null)
     setOverColumn(null)
@@ -261,6 +459,6 @@ export function useKanban() {
     addCardComment,
     completeSprint,
     createBlankBoard,
+    remote,
   }
 }
-

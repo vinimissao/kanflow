@@ -1,4 +1,14 @@
 import { useState } from 'react'
+import {
+  authMe,
+  displayNameFromMePayload,
+  getStoredToken,
+  HttpError,
+  isApiConfigured,
+  registerAndStoreToken,
+  setSessionUserId,
+  userIdFromMePayload,
+} from '../api'
 
 type CadastroProps = {
   onCadastro: (name: string) => void
@@ -9,7 +19,9 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [perfil, setPerfil] = useState<'admin' | 'membro' | 'visualizador'>('admin')
   const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   return (
     <div className="flex min-h-screen bg-[#F4F5F7] px-4">
@@ -27,7 +39,7 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
 
           <form
             className="mt-6 flex flex-col gap-4"
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault()
               setError(null)
 
@@ -46,6 +58,38 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
                 return
               }
 
+              if (isApiConfigured()) {
+                setLoading(true)
+                try {
+                  await registerAndStoreToken({
+                    name: trimmedName,
+                    email: trimmedEmail,
+                    password,
+                    perfil,
+                  })
+                  let display = trimmedName
+                  if (getStoredToken()) {
+                    try {
+                      const me = await authMe()
+                      setSessionUserId(userIdFromMePayload(me))
+                      display = displayNameFromMePayload(me)
+                    } catch {
+                      display = trimmedName
+                    }
+                  }
+                  onCadastro(display)
+                } catch (err) {
+                  const msg =
+                    err instanceof HttpError
+                      ? err.message
+                      : 'Não foi possível criar a conta. Tente novamente.'
+                  setError(msg)
+                } finally {
+                  setLoading(false)
+                }
+                return
+              }
+
               onCadastro(trimmedName)
             }}
           >
@@ -55,6 +99,7 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Ex: Vinicius"
+                autoComplete="name"
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
               />
             </div>
@@ -65,6 +110,7 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="vinicius@email.com"
+                autoComplete="email"
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
               />
             </div>
@@ -76,9 +122,27 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="new-password"
                 className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
               />
             </div>
+
+            {isApiConfigured() ? (
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-800">Perfil</label>
+                <select
+                  value={perfil}
+                  onChange={(e) =>
+                    setPerfil(e.target.value as 'admin' | 'membro' | 'visualizador')
+                  }
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
+                >
+                  <option value="admin">admin</option>
+                  <option value="membro">membro</option>
+                  <option value="visualizador">visualizador</option>
+                </select>
+              </div>
+            ) : null}
 
             {error ? (
               <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
@@ -88,9 +152,10 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
 
             <button
               type="submit"
-              className="mt-1 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-fuchsia-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95 active:scale-[0.98]"
+              disabled={loading}
+              className="mt-1 rounded-2xl bg-gradient-to-r from-fuchsia-500 via-fuchsia-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95 active:scale-[0.98] disabled:opacity-60"
             >
-              Criar
+              {loading ? 'Criando…' : 'Criar'}
             </button>
 
             <button
@@ -106,4 +171,3 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
     </div>
   )
 }
-

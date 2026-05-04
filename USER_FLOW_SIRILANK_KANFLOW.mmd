@@ -1,0 +1,51 @@
+flowchart TD
+  A[Início<br/>Acessar Kanflow] --> B{Usuário já tem conta?}
+  B -- Não --> C[Cadastro]
+  C --> C1[Preenche: Nome, E-mail, Senha]
+  C1 --> C2{Campos válidos?}
+  C2 -- Não --> C1
+  C2 -- Sim --> D[Cadastro concluído]
+  D --> E[Login automático ou Redireciona para Login]
+
+  B -- Sim --> F[Login]
+  F --> F1[Preenche: Nome/E-mail e Senha]
+  F1 --> F2{Campos válidos?}
+  F2 -- Não --> F1
+  F2 -- Sim --> G[Home / Workspace]
+
+  G --> H[Sidebar de menus]
+  H --> I{Seleciona seção}
+  I -- Quadro (Sprint board) --> J[Kanban]
+  J --> K[Ver colunas e cards]
+
+  K --> L{Criar card?}
+  L -- Sim --> M[Botão '+' na coluna]
+  M --> N[Formulário: título, descrição, responsável, dificuldade, tempo]
+  N --> O{Campos obrigatórios preenchidos?}
+  O -- Não --> N
+  O -- Sim --> P[Card é criado na coluna]
+
+  K --> Q{Mover card?}
+  Q -- Drag and Drop --> R[Soltar na coluna destino]
+  R --> S[Status do card é atualizado]
+
+  P --> T{Seleciona card?}
+  S --> T
+  T -- Sim --> U[Modal do card]
+  U --> V[Editar detalhes: responsável, dificuldade, tempo]
+  V --> W[Gerenciar checklist: adicionar e marcar]
+  W --> X[Gerenciar comentários: adicionar]
+
+  T --> Y{Complete Sprint?}
+  Y -- Quadro vazio --> Y1[Alerta: não pode finalizar sem cards]
+  Y -- Confirmar --> Z[Confirma: salva no histórico + zera quadro]
+  Z --> Z2[Abrir novo quadro em branco]
+
+  J --> AA{Novo quadro (sem finalizar)?}
+  AA -- Cancelar --> J
+  AA -- Confirmar --> AB[Descarta quadro atual sem salvar sprint]
+  AB --> AC[Abrir quadro em branco]
+
+  I -- Performance/Evolução/Sprints/Contribuidores --> AD[WorkspacePanel]
+  AD --> AE[Exibe indicadores e histórico atualizado]
+
