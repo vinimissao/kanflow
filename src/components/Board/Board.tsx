@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { DndContext, DragOverlay } from '@dnd-kit/core'
 import Column from '../Column/Column'
+import { HttpError, pontosToDifficulty } from '../../api'
 import { useKanban } from '../../hooks/useKanban'
 import type { CardDifficulty } from '../../types'
+
+const POKER_SCALE = [1, 2, 3, 5, 8, 13] as const
 
 function getCategoryPillClass(difficulty: CardDifficulty) {
   switch (difficulty) {
@@ -60,19 +63,44 @@ export default function Board({ kanban }: BoardProps) {
   )
 
   const [assigneeDraft, setAssigneeDraft] = useState('')
-  const [difficultyDraft, setDifficultyDraft] = useState<CardDifficulty>('Média')
   const [developmentTimeDraft, setDevelopmentTimeDraft] = useState('')
   const [newChecklistText, setNewChecklistText] = useState('')
   const [newCommentText, setNewCommentText] = useState('')
+  const boardScrollRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!activeCard) return
+    const el = boardScrollRef.current
+    if (!el) return
+    const margin = 72
+    const speed = 24
+    const onMove = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect()
+      if (e.clientX < r.left + margin) {
+        el.scrollLeft = Math.max(0, el.scrollLeft - speed)
+      } else if (e.clientX > r.right - margin) {
+        el.scrollLeft = Math.min(el.scrollWidth - el.clientWidth, el.scrollLeft + speed)
+      }
+    }
+    window.addEventListener('pointermove', onMove, { passive: true })
+    return () => window.removeEventListener('pointermove', onMove)
+  }, [activeCard])
 
   useEffect(() => {
     if (!selectedCard) return
     setAssigneeDraft(selectedCard.assignee)
-    setDifficultyDraft(selectedCard.difficulty)
     setDevelopmentTimeDraft(selectedCard.developmentTime)
     setNewChecklistText('')
     setNewCommentText('')
-  }, [selectedCard?.id])
+  }, [
+    selectedCard?.id,
+    selectedCard?.assignee,
+    selectedCard?.developmentTime,
+    selectedCard?.pontos,
+    (selectedCard?.checklists ?? [])
+      .map((i) => `${i.id}:${i.done ? 1 : 0}`)
+      .join('|'),
+  ])
 
   const activeChecklistTotal = activeCard?.checklists.length ?? 0
   const activeChecklistDone = activeCard
@@ -93,7 +121,10 @@ export default function Board({ kanban }: BoardProps) {
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >
-      <div className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:thin]">
+      <div
+        ref={boardScrollRef}
+        className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:thin]"
+      >
         <div className="flex min-w-max gap-5">
           {columns.map((column) => (
             <Column
@@ -117,10 +148,10 @@ export default function Board({ kanban }: BoardProps) {
               <span
                 className={[
                   'inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-                  getCategoryPillClass(activeCard.difficulty),
+                  getCategoryPillClass(pontosToDifficulty(activeCard.pontos)),
                 ].join(' ')}
               >
-                {categoryLabel(activeCard.difficulty)}
+                {categoryLabel(pontosToDifficulty(activeCard.pontos))}
               </span>
               <h3 className="mt-2.5 text-[15px] font-bold leading-snug text-gray-900">{activeCard.title}</h3>
               <p className="mt-1.5 line-clamp-2 text-[13px] text-gray-500">{activeCard.description}</p>
@@ -143,21 +174,21 @@ export default function Board({ kanban }: BoardProps) {
                 <span
                   className={[
                     'inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-semibold',
-                    getCategoryPillClass(selectedCard.difficulty),
+                    getCategoryPillClass(pontosToDifficulty(selectedCard.pontos)),
                   ].join(' ')}
                 >
-                  {categoryLabel(selectedCard.difficulty)}
+                  {categoryLabel(pontosToDifficulty(selectedCard.pontos))}
                 </span>
                 <h3 className="mt-2 truncate text-lg font-bold text-gray-900">{selectedCard.title}</h3>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[11px] font-semibold text-gray-700">
                     {selectedCard.assignee}
                   </span>
-                  <span className="rounded-full bg-fuchsia-50 px-2.5 py-0.5 text-[11px] font-semibold text-fuchsia-800 ring-1 ring-fuchsia-100">
-                    {selectedCard.difficulty}
-                  </span>
                   <span className="rounded-full border border-gray-100 bg-white px-2.5 py-0.5 text-[11px] font-medium text-gray-600">
                     Tempo: {selectedCard.developmentTime}
+                  </span>
+                  <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-bold text-violet-800 ring-1 ring-violet-100">
+                    {selectedCard.pontos} pts
                   </span>
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-gray-500">{selectedCard.description}</p>
@@ -165,45 +196,37 @@ export default function Board({ kanban }: BoardProps) {
               <button
                 type="button"
                 onClick={() => setSelectedCardId(null)}
-                className="shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                className="kf-btn shrink-0 rounded-xl border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
               >
                 Fechar
               </button>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                updateCardDetails(selectedCard.id, {
-                  assignee: assigneeDraft,
-                  difficulty: difficultyDraft,
-                  developmentTime: developmentTimeDraft,
-                })
-              }}
-              className="mt-5"
-            >
+            <div className="mt-5">
               <div className="grid grid-cols-1 gap-3">
                 <div>
                   <label className="block text-sm font-semibold text-gray-800">Responsável</label>
                   <input
                     value={assigneeDraft}
                     onChange={(e) => setAssigneeDraft(e.target.value)}
+                    onBlur={() => {
+                      const next = assigneeDraft.trim()
+                      if (!next || next === selectedCard.assignee) return
+                      void (async () => {
+                        try {
+                          await updateCardDetails(selectedCard.id, { assignee: next })
+                        } catch (err) {
+                          window.alert(
+                            err instanceof HttpError
+                              ? err.message
+                              : 'Não foi possível salvar o responsável.',
+                          )
+                        }
+                      })()
+                    }}
                     placeholder="Ex: Maria"
                     className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-semibold text-gray-800">Dificuldade</label>
-                  <select
-                    value={difficultyDraft}
-                    onChange={(e) => setDifficultyDraft(e.target.value as CardDifficulty)}
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
-                  >
-                    <option value="Baixa">Baixa</option>
-                    <option value="Média">Média</option>
-                    <option value="Alta">Alta</option>
-                  </select>
                 </div>
 
                 <div>
@@ -213,28 +236,64 @@ export default function Board({ kanban }: BoardProps) {
                   <input
                     value={developmentTimeDraft}
                     onChange={(e) => setDevelopmentTimeDraft(e.target.value)}
+                    onBlur={() => {
+                      const next = developmentTimeDraft.trim()
+                      if (!next || next === selectedCard.developmentTime) return
+                      void (async () => {
+                        try {
+                          await updateCardDetails(selectedCard.id, { developmentTime: next })
+                        } catch (err) {
+                          window.alert(
+                            err instanceof HttpError
+                              ? err.message
+                              : 'Não foi possível salvar o tempo estimado.',
+                          )
+                        }
+                      })()
+                    }}
                     placeholder="Ex: 8 horas"
                     className="mt-2 w-full rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
                   />
                 </div>
-              </div>
 
-              <div className="mt-4 flex gap-2">
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95"
-                >
-                  Salvar detalhes
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedCardId(null)}
-                  className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
-                >
-                  Cancelar
-                </button>
+                <div className="rounded-xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50/90 to-purple-50/40 p-3">
+                  <p className="text-xs font-bold text-gray-900">Planning poker (Fibonacci)</p>
+                  <p className="mt-0.5 text-[11px] leading-snug text-gray-600">
+                    Toque no número para gravar <strong>pontos</strong> na API. Responsável e tempo gravam ao sair
+                    do campo (Tab ou clique fora). Sprint Poker no menu faz a média da equipe.
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap gap-1.5">
+                    {POKER_SCALE.map((pts) => (
+                      <button
+                        key={pts}
+                        type="button"
+                        onClick={() => {
+                          void (async () => {
+                            try {
+                              await updateCardDetails(selectedCard.id, { pontos: pts })
+                            } catch (err) {
+                              window.alert(
+                                err instanceof HttpError
+                                  ? err.message
+                                  : 'Não foi possível salvar os pontos. Verifique a API.',
+                              )
+                            }
+                          })()
+                        }}
+                        className={[
+                          'kf-btn rounded-lg border px-2.5 py-1.5 text-xs font-bold shadow-sm transition',
+                          selectedCard.pontos === pts
+                            ? 'border-transparent bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow-fuchsia-500/25'
+                            : 'border-fuchsia-200/80 bg-white text-fuchsia-800 hover:border-fuchsia-400 hover:bg-fuchsia-50',
+                        ].join(' ')}
+                      >
+                        {pts}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </form>
+            </div>
 
             <div className="mt-6">
               <div className="flex items-center justify-between gap-2">
@@ -280,7 +339,7 @@ export default function Board({ kanban }: BoardProps) {
                 />
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/20 transition hover:opacity-95"
+                  className="kf-btn rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/20 transition hover:opacity-95"
                 >
                   Adicionar
                 </button>
@@ -324,7 +383,7 @@ export default function Board({ kanban }: BoardProps) {
                 />
                 <button
                   type="submit"
-                  className="rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/20 transition hover:opacity-95"
+                  className="kf-btn rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/20 transition hover:opacity-95"
                 >
                   Enviar
                 </button>

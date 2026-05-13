@@ -13,10 +13,22 @@ export class HttpError extends Error {
 }
 
 function extractMessage(body: unknown): string | null {
+  if (typeof body === 'string' && body.trim()) {
+    const t = body.trim()
+    if (t.length > 280) return `${t.slice(0, 280)}…`
+    return t
+  }
   if (!body || typeof body !== 'object') return null
   const o = body as Record<string, unknown>
-  const direct = o.message ?? o.error ?? o.detail
-  if (typeof direct === 'string') return direct
+  const detailStr = typeof o.detail === 'string' && o.detail.trim() ? o.detail.trim() : null
+  const msgStr =
+    detailStr ??
+    (typeof o.message === 'string' && o.message.trim() ? o.message.trim() : null) ??
+    (typeof o.error === 'string' && o.error.trim() ? o.error.trim() : null)
+  if (msgStr) {
+    const path = typeof o.path === 'string' && o.path.trim() ? o.path.trim() : ''
+    return path ? `${msgStr} (${path})` : msgStr
+  }
 
   if (Array.isArray(o.errors) && o.errors.length > 0) {
     const first = o.errors[0]
@@ -46,7 +58,6 @@ function extractMessage(body: unknown): string | null {
 
 export type ApiFetchOptions = RequestInit & {
   json?: unknown
-  /** Se false, não envia Bearer (ex.: login/register). Default true quando há token. */
   auth?: boolean
 }
 
@@ -92,6 +103,9 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}): 
   }
 
   if (!res.ok) {
+    if (import.meta.env.DEV) {
+      console.error('[apiFetch]', path, res.status, body ?? text)
+    }
     const msg = extractMessage(body) ?? res.statusText ?? `Erro HTTP ${res.status}`
     throw new HttpError(res.status, msg, body)
   }

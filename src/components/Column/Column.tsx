@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { useDroppable } from '@dnd-kit/core'
-import type { CardDifficulty, ColumnStatus, KanbanCard } from '../../types'
+import { FIBONACCI_PONTOS } from '../../api'
+import type { ColumnStatus, FibonacciPoints, KanbanCard } from '../../types'
 import KanbanCardView from '../Card/Card'
 
 type ColumnProps = {
@@ -14,7 +15,7 @@ type ColumnProps = {
     title: string
     description: string
     assignee: string
-    difficulty: CardDifficulty
+    pontos: FibonacciPoints
     developmentTime: string
     status: ColumnStatus
   }) => void
@@ -39,14 +40,14 @@ export default function Column({
   const [formTitle, setFormTitle] = useState('')
   const [formDescription, setFormDescription] = useState('')
   const [formAssignee, setFormAssignee] = useState('')
-  const [formDifficulty, setFormDifficulty] = useState<CardDifficulty>('Média')
+  const [formPontos, setFormPontos] = useState<FibonacciPoints>(3)
   const [formDevelopmentTime, setFormDevelopmentTime] = useState('')
 
   const resetForm = () => {
     setFormTitle('')
     setFormDescription('')
     setFormAssignee('')
-    setFormDifficulty('Média')
+    setFormPontos(3)
     setFormDevelopmentTime('')
   }
 
@@ -56,7 +57,7 @@ export default function Column({
       title: formTitle,
       description: formDescription,
       assignee: formAssignee,
-      difficulty: formDifficulty,
+      pontos: formPontos,
       developmentTime: formDevelopmentTime,
       status,
     })
@@ -82,7 +83,7 @@ export default function Column({
             type="button"
             onClick={() => setIsAdding(true)}
             aria-label={`Adicionar card em ${title}`}
-            className="flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-base font-medium text-gray-500 transition hover:border-fuchsia-300 hover:text-fuchsia-600"
+            className="kf-btn flex h-7 w-7 items-center justify-center rounded-lg border border-dashed border-gray-300 bg-white text-base font-medium text-gray-500 transition hover:border-fuchsia-300 hover:text-fuchsia-600"
           >
             +
           </button>
@@ -117,15 +118,26 @@ export default function Column({
               placeholder="Responsável"
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
-            <select
-              value={formDifficulty}
-              onChange={(e) => setFormDifficulty(e.target.value as CardDifficulty)}
-              className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
-            >
-              <option value="Baixa">Baixa</option>
-              <option value="Média">Média</option>
-              <option value="Alta">Alta</option>
-            </select>
+            <div>
+              <p className="text-xs font-semibold text-gray-700">Pontos (Fibonacci)</p>
+              <div className="mt-1.5 flex flex-wrap gap-1.5">
+                {FIBONACCI_PONTOS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setFormPontos(p)}
+                    className={[
+                      'kf-btn rounded-lg border px-2.5 py-1 text-xs font-bold transition',
+                      formPontos === p
+                        ? 'border-transparent bg-gradient-to-r from-fuchsia-500 to-purple-600 text-white shadow-sm'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-fuchsia-200',
+                    ].join(' ')}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            </div>
             <input
               value={formDevelopmentTime}
               onChange={(e) => setFormDevelopmentTime(e.target.value)}
@@ -136,7 +148,7 @@ export default function Column({
             <div className="flex gap-2 pt-1">
               <button
                 type="submit"
-                className="flex-1 rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95"
+                className="kf-btn flex-1 rounded-xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-3 py-2.5 text-sm font-semibold text-white shadow-md shadow-fuchsia-500/25 transition hover:opacity-95"
               >
                 Criar
               </button>
@@ -146,7 +158,7 @@ export default function Column({
                   resetForm()
                   setIsAdding(false)
                 }}
-                className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                className="kf-btn rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
               >
                 Cancelar
               </button>

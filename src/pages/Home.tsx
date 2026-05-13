@@ -6,16 +6,20 @@ import {
   getStoredToken,
   HttpError,
   isApiConfigured,
+  isPlanLimitError,
   listWorkspaces,
   pickWorkspaceId,
   searchWorkspaceCards,
 } from '../api'
+import { useBillingPlan } from '../hooks/useBillingPlan'
 import { useKanban } from '../hooks/useKanban'
+import BillingUpgrade from './BillingUpgrade'
 import {
   SidebarMenu,
   WorkspacePanel,
   type WorkspaceSection,
 } from '../components/Workspace/ManagementPanels'
+import type { BillingPlanSnapshot } from '../types/billing'
 
 type HomeProps = {
   userName?: string
@@ -43,23 +47,38 @@ function userInitials(name: string) {
   return name.slice(0, 2).toUpperCase() || '?'
 }
 
+function planLabelFromSnapshot(plan: BillingPlanSnapshot | null): string | null {
+  if (!plan) return null
+  if (plan.planType === 'FREE') return 'Free'
+  if (plan.planType === 'BASIC') return 'Básico'
+  return 'Full'
+}
+
 export default function Home({ userName, onLogout }: HomeProps) {
   const [section, setSection] = useState<WorkspaceSection>('board')
   const [workspaceId, setWorkspaceId] = useState<string | null>(null)
   const [workspaceLoading, setWorkspaceLoading] = useState(false)
   const [workspaceErr, setWorkspaceErr] = useState<string | null>(null)
+  const [workspacePlanLimit, setWorkspacePlanLimit] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchHits, setSearchHits] = useState<string[] | null>(null)
+  const [showBilling, setShowBilling] = useState(false)
 
   const apiSession = isApiConfigured() && Boolean(getStoredToken())
   const useRemote = apiSession && Boolean(workspaceId)
 
+  const { plan: billingPlan, loading: billingLoading, refresh: refreshBilling } = useBillingPlan()
   const kanban = useKanban({ workspaceId, remote: useRemote })
+
+  const sidebarPlanLabel = apiSession ? planLabelFromSnapshot(billingPlan) : null
+  const sprintHistoryEnabled = apiSession ? (billingPlan?.sprintHistoryEnabled ?? true) : true
+  const showAds = Boolean(apiSession && billingPlan?.showAds)
 
   useEffect(() => {
     if (!apiSession) return
     setWorkspaceLoading(true)
     setWorkspaceErr(null)
+    setWorkspacePlanLimit(false)
     let cancelled = false
     ;(async () => {
       try {
@@ -76,6 +95,11 @@ export default function Home({ userName, onLogout }: HomeProps) {
           setWorkspaceId(pickWorkspaceId(list[0]))
         }
       } catch (e) {
+        if (cancelled) return
+        if (isPlanLimitError(e)) {
+          setWorkspacePlanLimit(true)
+          return
+        }
         const msg =
           e instanceof HttpError
             ? e.message
@@ -143,7 +167,9 @@ export default function Home({ userName, onLogout }: HomeProps) {
     [kanban, visibleCards],
   )
 
-  const handleCompleteSprint = () => {
+  const openBilling = () => setShowBilling(true)
+
+  const handleCompleteSprint = async () => {
     if (kanban.cards.length === 0) {
       window.alert('O quadro está vazio. Adicione cards antes de finalizar a sprint.')
       return
@@ -152,7 +178,29 @@ export default function Home({ userName, onLogout }: HomeProps) {
       'Tem certeza que deseja finalizar a sprint?\n\nO estado atual do quadro será salvo no histórico (Performance, Evolução e Lista de Sprints) e um novo quadro em branco será aberto.',
     )
     if (!ok) return
-    kanban.completeSprint()
+    try {
+      await kanban.completeSprint()
+    } catch (e) {
+      if (isPlanLimitError(e)) {
+        window.alert('Seu plano atual não permite finalizar sprint com histórico. Faça upgrade para liberar.')
+        setShowBilling(true)
+        return
+      }
+      console.error(e)
+      if (e instanceof HttpError) {
+        const hint =
+          e.status >= 500
+            ? '\n\nErro no servidor (500). Abra o DevTools → separador Network → pedido sprints/complete → Response, e os logs do Spring no terminal.'
+            : ''
+        const devBody =
+          import.meta.env.DEV && e.body !== undefined
+            ? `\n\n[dev] corpo: ${JSON.stringify(e.body).slice(0, 500)}`
+            : ''
+        window.alert(`${e.message}${hint}${devBody}`)
+      } else {
+        window.alert('Não foi possível finalizar a sprint.')
+      }
+    }
   }
 
   const handleCreateBlankBoard = () => {
@@ -167,37 +215,116 @@ export default function Home({ userName, onLogout }: HomeProps) {
     kanban.createBlankBoard()
   }
 
+  if (apiSession && showBilling) {
+    return (
+      <BillingUpgrade
+        plan={billingPlan}
+        planLoading={billingLoading}
+        onBack={() => setShowBilling(false)}
+        onPlanChanged={() => {
+          void refreshBilling()
+          setShowBilling(false)
+        }}
+      />
+    )
+  }
+
   if (apiSession && workspaceLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F4F5F7] text-sm text-gray-600">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-screen items-center justify-center bg-[#F4F5F7] text-sm text-gray-600 outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/30"
+      >
         Preparando seu workspace…
-      </div>
+      </main>
+    )
+  }
+
+  if (apiSession && workspacePlanLimit) {
+    return (
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#F4F5F7] px-4 text-center outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/30"
+      >
+        <div className="max-w-md rounded-2xl border border-fuchsia-100 bg-white p-8 shadow-card">
+          <h2 className="text-lg font-bold text-gray-900">Limite do plano</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Não é possível criar outro projeto no plano Free ou a ação não é permitida para o seu plano
+            atual.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowBilling(true)}
+            className="kf-btn mt-6 w-full rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 py-3 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25"
+          >
+            Ver planos e fazer upgrade
+          </button>
+          {onLogout ? (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="kf-btn mt-3 w-full rounded-2xl border border-gray-200 py-2.5 text-sm font-medium text-gray-600"
+            >
+              Sair
+            </button>
+          ) : null}
+        </div>
+      </main>
     )
   }
 
   if (apiSession && workspaceErr) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F4F5F7] px-4 text-center">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F4F5F7] px-4 text-center outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/30"
+      >
         <p className="max-w-md text-sm text-red-700">{workspaceErr}</p>
         {onLogout ? (
           <button
             type="button"
             onClick={onLogout}
-            className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700"
+            className="kf-btn rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700"
           >
             Sair e tentar de novo
           </button>
         ) : null}
-      </div>
+      </main>
     )
   }
 
   return (
     <div className="flex min-h-screen bg-[#F4F5F7]">
-      <SidebarMenu selected={section} onSelect={setSection} />
+      <SidebarMenu
+        selected={section}
+        onSelect={setSection}
+        planLabel={sidebarPlanLabel}
+        onOpenBilling={apiSession ? openBilling : undefined}
+      />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-gray-200/80 bg-white/95 backdrop-blur-md">
+        {showAds ? (
+          <div className="border-b border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-2.5 text-center">
+            <p className="text-xs text-amber-950/90">
+              <span className="font-semibold">Anúncio</span> — Você está no plano Free.{' '}
+              <button
+                type="button"
+                onClick={openBilling}
+                className="kf-btn font-semibold text-fuchsia-700 underline decoration-fuchsia-300 underline-offset-2 hover:text-fuchsia-900"
+              >
+                Remover anúncios e desbloquear recursos
+              </button>
+            </p>
+          </div>
+        ) : null}
+
+        <header
+          className="sticky top-0 z-10 border-b border-gray-200/80 bg-white/95 backdrop-blur-md"
+          aria-label="Ferramentas do quadro e conta"
+        >
           <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6 lg:px-6">
             <div className="relative min-w-0 flex-1 max-w-xl">
               <SearchIcon />
@@ -212,17 +339,22 @@ export default function Home({ userName, onLogout }: HomeProps) {
             </div>
 
             <div className="flex flex-wrap items-center justify-end gap-3">
+              {apiSession && sidebarPlanLabel ? (
+                <span className="hidden rounded-full bg-fuchsia-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-fuchsia-800 ring-1 ring-fuchsia-100 sm:inline">
+                  {sidebarPlanLabel}
+                </span>
+              ) : null}
               <button
                 type="button"
                 onClick={handleCreateBlankBoard}
-                className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 active:scale-[0.98]"
+                className="kf-btn rounded-full border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50"
               >
                 Novo quadro
               </button>
               <button
                 type="button"
-                onClick={handleCompleteSprint}
-                className="rounded-full bg-gradient-to-r from-fuchsia-500 via-fuchsia-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 transition hover:opacity-95 active:scale-[0.98]"
+                onClick={() => void handleCompleteSprint()}
+                className="kf-btn rounded-full bg-gradient-to-r from-fuchsia-500 via-fuchsia-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 transition hover:opacity-95"
               >
                 Complete Sprint
               </button>
@@ -238,6 +370,7 @@ export default function Home({ userName, onLogout }: HomeProps) {
                   <div
                     className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-fuchsia-400 to-purple-600 text-xs font-bold text-white shadow-md ring-2 ring-white"
                     title={userName}
+                    aria-hidden
                   >
                     {userInitials(userName)}
                   </div>
@@ -246,7 +379,7 @@ export default function Home({ userName, onLogout }: HomeProps) {
                   <button
                     type="button"
                     onClick={onLogout}
-                    className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                    className="kf-btn rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
                   >
                     Sair
                   </button>
@@ -256,7 +389,11 @@ export default function Home({ userName, onLogout }: HomeProps) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex-1 overflow-auto p-4 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fuchsia-400/25 lg:p-6"
+        >
           <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-xl font-bold tracking-tight text-gray-900">
@@ -273,7 +410,16 @@ export default function Home({ userName, onLogout }: HomeProps) {
           <div className="min-w-0">
             {section === 'board' ? <Board kanban={kanbanForBoard} /> : null}
             {section !== 'board' ? (
-              <WorkspacePanel selected={section} cards={kanban.cards} completedSprints={kanban.completedSprints} />
+              <WorkspacePanel
+                selected={section}
+                cards={kanban.cards}
+                completedSprints={kanban.completedSprints}
+                sprintHistoryEnabled={sprintHistoryEnabled}
+                onUpgrade={apiSession ? openBilling : undefined}
+                onApplyPokerEstimate={async (cardId, pontos) => {
+                  await kanban.updateCardDetails(cardId, { pontos })
+                }}
+              />
             ) : null}
           </div>
         </main>

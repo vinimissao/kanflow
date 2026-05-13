@@ -1,4 +1,3 @@
-/** Normaliza listas retornadas como array puro, `content`, `data` ou `workspaces`. */
 export function extractWorkspaceList(payload: unknown): unknown[] {
   if (Array.isArray(payload)) return payload
   if (payload && typeof payload === 'object') {

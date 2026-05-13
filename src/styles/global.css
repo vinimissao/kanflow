@@ -13,3 +13,65 @@ body {
   background-color: #f4f5f7;
 }
 
+html[data-kf-large-text='true'] {
+  font-size: 112.5%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+html[data-kf-reduce-motion='true'] {
+  scroll-behavior: auto;
+}
+
+@media (prefers-reduced-motion: reduce),
+  html[data-kf-reduce-motion='true'] {
+  .kf-btn {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.kf-skip-link {
+  position: absolute;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 10000;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(to right, #d946ef, #9333ea);
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.15);
+  transform: translateY(-160%);
+  transition: transform 0.15s ease-out;
+}
+
+.kf-skip-link:focus {
+  outline: none;
+}
+
+.kf-skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+.kf-focus-ring:focus-visible,
+.kf-focus-within-ring:focus-within {
+  outline: 3px solid rgb(192 38 211 / 0.55);
+  outline-offset: 2px;
+}
+
+@layer utilities {
+  .kf-btn {
+    @apply transition-[transform,opacity,box-shadow] duration-150 ease-out;
+  }
+  .kf-btn:active {
+    @apply motion-safe:scale-[0.97];
+  }
+}
+

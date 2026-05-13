@@ -21,6 +21,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Implementar tela de login e validação básica de formulário.',
     assignee: 'Rosa',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '3 horas',
     checklists: [
       { id: 'cl-login-1-1', text: 'Tela de login criada', done: true },
@@ -41,6 +42,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Criar fluxo de recuperação por e-mail e mensagens de feedback.',
     assignee: 'Diego',
     difficulty: 'Alta',
+    pontos: 8,
     developmentTime: '6 horas',
     checklists: [
       { id: 'cl-login-2-1', text: 'Fluxo de recuperação desenhado', done: true },
@@ -56,6 +58,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Conectar endpoints principais e padronizar tratamento de erros.',
     assignee: 'Vanessa',
     difficulty: 'Alta',
+    pontos: 8,
     developmentTime: '5 horas',
     checklists: [
       { id: 'cl-api-1-1', text: 'Endpoints conectados', done: false },
@@ -76,6 +79,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Definir tipos e modelos para requests/responses.',
     assignee: 'Lucas',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '4 horas',
     checklists: [
       { id: 'cl-api-2-1', text: 'Modelos de request definidos', done: true },
@@ -91,6 +95,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Definir estados do card e regras de movimento entre colunas.',
     assignee: 'Ana',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '2 horas',
     checklists: [
       { id: 'cl-kanban-1-1', text: 'Estados mapeados', done: true },
@@ -107,6 +112,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Ajustar estilo (sombra, bordas arredondadas e layout responsivo).',
     assignee: 'Marcos',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '2 horas',
     checklists: [
       { id: 'cl-kanban-2-1', text: 'Estilo aplicado nos containers', done: true },
@@ -122,6 +128,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Permitir arrastar cards entre colunas e atualizar status ao soltar.',
     assignee: 'Paula',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '3 horas',
     checklists: [
       { id: 'cl-dnd-1-1', text: 'Implementar drag', done: true },
@@ -136,6 +143,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Adicionar highlight na coluna e placeholder durante o drag.',
     assignee: 'Henrique',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '1 hora',
     checklists: [
       { id: 'cl-dnd-2-1', text: 'Highlight na coluna', done: true },
@@ -151,6 +159,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Validar responsividade e padrões de componentes (Board/Column/Card).',
     assignee: 'Carla',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '2 horas',
     checklists: [
       { id: 'cl-review-1-1', text: 'Responsividade conferida', done: false },
@@ -165,6 +174,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Garantir que tipos (status, cards) estejam consistentes e seguros.',
     assignee: 'Rafael',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '1 hora',
     checklists: [
       { id: 'cl-review-2-1', text: 'Tipos de card conferidos', done: true },
@@ -180,6 +190,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Verificar fluxo do Kanban em desktop e no modo responsivo.',
     assignee: 'João',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '2 horas',
     checklists: [
       { id: 'cl-test-1-1', text: 'Fluxo conferido no desktop', done: false },
@@ -194,6 +205,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Testar arraste rápido, soltar fora e comportamento em colunas vazias.',
     assignee: 'Bianca',
     difficulty: 'Alta',
+    pontos: 8,
     developmentTime: '3 horas',
     checklists: [
       { id: 'cl-test-2-1', text: 'Arraste rápido testado', done: false },
@@ -209,6 +221,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Publicar versão estável do quadro Kanban no ambiente de testes.',
     assignee: 'Vanessa',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '1 hora',
     checklists: [
       { id: 'cl-done-1-1', text: 'Build executado', done: true },
@@ -223,6 +236,7 @@ export const initialCards: KanbanCard[] = [
     description: 'Coletar feedback e planejar melhorias para o próximo ciclo.',
     assignee: 'Diego',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '2 horas',
     checklists: [
       { id: 'cl-done-2-1', text: 'Feedback coletado', done: true },
@@ -232,7 +246,6 @@ export const initialCards: KanbanCard[] = [
     status: asStatus('done'),
   },
 
-  // --- Roadmap do produto (estado do front vs próximos passos) ---
   {
     id: 'meta-done-stack',
     title: '[Feito] Shell React + Vite + Tailwind',
@@ -240,6 +253,7 @@ export const initialCards: KanbanCard[] = [
       'App.tsx com fluxo Login/Cadastro/Home; tema consistente; sem backend.',
     assignee: 'Front',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '—',
     checklists: [
       { id: 'cl-meta-stack-1', text: 'Vite + TS configurados', done: true },
@@ -255,6 +269,7 @@ export const initialCards: KanbanCard[] = [
       'Colunas por ColumnStatus; Board/Column/Card; @dnd-kit atualiza status ao soltar; useKanban em memória.',
     assignee: 'Front',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '—',
     checklists: [
       { id: 'cl-meta-kanban-1', text: '7 colunas + cards filtrados por status', done: true },
@@ -270,6 +285,7 @@ export const initialCards: KanbanCard[] = [
       'ManagementPanels com métricas e histórico; Complete Sprint e Novo quadro só no estado local.',
     assignee: 'Front',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '—',
     checklists: [
       { id: 'cl-meta-painel-1', text: 'completedSprints + UI de sprints', done: true },
@@ -285,6 +301,7 @@ export const initialCards: KanbanCard[] = [
       'Substituir useKanban local por GET/PATCH/move + endpoints de workspace e sprint; loading/erro/toast.',
     assignee: 'Full-stack',
     difficulty: 'Alta',
+    pontos: 8,
     developmentTime: 'várias iterações',
     checklists: [
       { id: 'cl-meta-api-1', text: 'Cliente HTTP + tipos alinhados ao backend', done: false },
@@ -300,6 +317,7 @@ export const initialCards: KanbanCard[] = [
       'Front não tem workspace hoje; precisa resolver/criar workspace e passar workspaceId em todas as chamadas.',
     assignee: 'Full-stack',
     difficulty: 'Alta',
+    pontos: 8,
     developmentTime: '—',
     checklists: [
       { id: 'cl-meta-ws-1', text: 'GET/POST workspaces + estado global', done: false },
@@ -315,6 +333,7 @@ export const initialCards: KanbanCard[] = [
       'Campo de busca em Home só é UI; falta filtrar cards no client ou GET .../search?q=.',
     assignee: 'Front',
     difficulty: 'Baixa',
+    pontos: 1,
     developmentTime: '2–4 h',
     checklists: [
       { id: 'cl-meta-busca-1', text: 'Definir contrato com backend', done: false },
@@ -330,6 +349,7 @@ export const initialCards: KanbanCard[] = [
       'Backend pode ter position; front hoje não reordena na mesma coluna nem envia índice.',
     assignee: 'Front',
     difficulty: 'Alta',
+    pontos: 8,
     developmentTime: '—',
     checklists: [
       { id: 'cl-meta-pos-1', text: 'Sort por position no render', done: false },
@@ -345,6 +365,7 @@ export const initialCards: KanbanCard[] = [
       'Trocar nome em localStorage por login seguro, convites e regras por plano (admin/coordenador).',
     assignee: 'Back + Front',
     difficulty: 'Alta',
+    pontos: 8,
     developmentTime: '—',
     checklists: [
       { id: 'cl-meta-auth-1', text: 'Login/register na API', done: false },
@@ -360,6 +381,7 @@ export const initialCards: KanbanCard[] = [
       'Publicar TERMO_DE_USO_KANFLOW.md no app; aceite; limites Free/Básico/Full conforme negócio.',
     assignee: 'Produto + Front',
     difficulty: 'Média',
+    pontos: 3,
     developmentTime: '—',
     checklists: [
       { id: 'cl-meta-termo-1', text: 'Modal ou página /termos', done: false },

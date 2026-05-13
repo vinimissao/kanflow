@@ -23,7 +23,11 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
   return (
     <div className="flex min-h-screen bg-[#F4F5F7] px-4">
       <div className="mx-auto flex w-full max-w-md items-center py-12">
-        <div className="w-full rounded-2xl border border-gray-100 bg-white/95 p-6 shadow-card md:p-8">
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="w-full rounded-2xl border border-gray-100 bg-white/95 p-6 shadow-card outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-400/30 md:p-8"
+        >
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-fuchsia-500 to-purple-600 text-sm font-bold text-white shadow-lg shadow-fuchsia-500/20">
               K
@@ -74,8 +78,11 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
             }}
           >
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-800">Nome ou e-mail</label>
+              <label htmlFor="login-email" className="text-sm font-semibold text-gray-800">
+                Nome ou e-mail
+              </label>
               <input
+                id="login-email"
                 value={nameOrEmail}
                 onChange={(e) => setNameOrEmail(e.target.value)}
                 placeholder="Ex: Vinicius ou vinicius@email.com"
@@ -85,8 +92,11 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-gray-800">Senha</label>
+              <label htmlFor="login-password" className="text-sm font-semibold text-gray-800">
+                Senha
+              </label>
               <input
+                id="login-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -97,7 +107,10 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
             </div>
 
             {error ? (
-              <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              <div
+                role="alert"
+                className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700"
+              >
                 {error}
               </div>
             ) : null}
@@ -118,7 +131,7 @@ export default function Login({ onLogin, onGoCadastro }: LoginProps) {
               Não tenho conta. Criar cadastro
             </button>
           </form>
-        </div>
+        </main>
       </div>
     </div>
   )

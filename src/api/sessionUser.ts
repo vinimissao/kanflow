@@ -1,4 +1,3 @@
-/** ID do usuário logado (para comentários: `autorId`). Vem do GET /auth/me. */
 const USER_ID_KEY = 'kanflow_user_id'
 
 export function setSessionUserId(id: string | null) {

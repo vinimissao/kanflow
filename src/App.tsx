@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import AccessibilityPreferences from './components/Accessibility/AccessibilityPreferences'
+import SkipToMain from './components/Accessibility/SkipToMain'
 import {
   authMe,
   clearStoredToken,
@@ -78,48 +80,68 @@ export default function App() {
 
   if (!authChecked && isApiConfigured()) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#F4F5F7] text-sm text-gray-600">
-        Carregando…
-      </div>
+      <>
+        <SkipToMain />
+        <AccessibilityPreferences />
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="flex min-h-screen items-center justify-center bg-[#F4F5F7] text-sm text-gray-600 outline-none"
+        >
+          Carregando…
+        </main>
+      </>
     )
   }
 
   if (screen === 'login') {
     return (
-      <Login
-        onLogin={(name) => {
-          localStorage.setItem(STORAGE_KEY, name)
-          setUserName(name)
-          setScreen('board')
-        }}
-        onGoCadastro={() => setScreen('cadastro')}
-      />
+      <>
+        <SkipToMain />
+        <AccessibilityPreferences />
+        <Login
+          onLogin={(name) => {
+            localStorage.setItem(STORAGE_KEY, name)
+            setUserName(name)
+            setScreen('board')
+          }}
+          onGoCadastro={() => setScreen('cadastro')}
+        />
+      </>
     )
   }
 
   if (screen === 'cadastro') {
     return (
-      <Cadastro
-        onCadastro={(name) => {
-          localStorage.setItem(STORAGE_KEY, name)
-          setUserName(name)
-          setScreen('board')
-        }}
-        onGoLogin={() => setScreen('login')}
-      />
+      <>
+        <SkipToMain />
+        <AccessibilityPreferences />
+        <Cadastro
+          onCadastro={(name) => {
+            localStorage.setItem(STORAGE_KEY, name)
+            setUserName(name)
+            setScreen('board')
+          }}
+          onGoLogin={() => setScreen('login')}
+        />
+      </>
     )
   }
 
   return (
-    <Home
-      userName={userName ?? undefined}
-      onLogout={() => {
-        clearStoredToken()
-        localStorage.removeItem(STORAGE_KEY)
-        setSessionUserId(null)
-        setUserName(null)
-        setScreen('login')
-      }}
-    />
+    <>
+      <SkipToMain />
+      <AccessibilityPreferences />
+      <Home
+        userName={userName ?? undefined}
+        onLogout={() => {
+          clearStoredToken()
+          localStorage.removeItem(STORAGE_KEY)
+          setSessionUserId(null)
+          setUserName(null)
+          setScreen('login')
+        }}
+      />
+    </>
   )
 }

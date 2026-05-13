@@ -38,8 +38,7 @@ export function readTokenFromAuthResponse(data: unknown): string | null {
 
 export async function authRegister(body: AuthRegisterBody) {
   const email = body.email.trim()
-  const perfil = body.perfil ?? 'admin'
-  // Contrato alinhado ao Spring: POST /api/auth/register
+  const perfil = body.perfil ?? 'membro'
   return apiFetch<unknown>('/auth/register', {
     method: 'POST',
     json: {
@@ -77,7 +76,6 @@ export async function authChangePassword(body: ChangePasswordBody) {
   })
 }
 
-/** Login e já persiste o token se a resposta trouxer. */
 export async function loginAndStoreToken(body: AuthLoginBody) {
   const data = await authLogin(body)
   const token = readTokenFromAuthResponse(data)

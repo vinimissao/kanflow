@@ -1,4 +1,3 @@
-/** Converte texto do formulário ("8 horas", "12") em número para `tempoEstimado` na API. */
 export function parseTempoEstimadoHoras(text: string): number {
   const trimmed = text.trim()
   if (!trimmed) return 0

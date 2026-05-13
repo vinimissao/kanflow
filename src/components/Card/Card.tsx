@@ -1,4 +1,5 @@
 import { useDraggable } from '@dnd-kit/core'
+import { pontosToDifficulty } from '../../api'
 import type { CardDifficulty, KanbanCard } from '../../types'
 
 type CardProps = {
@@ -79,7 +80,7 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
 
   const totalChecklist = card.checklists.length
   const doneChecklist = card.checklists.filter((item) => item.done).length
-  const category = getCategoryPill(card.difficulty)
+  const category = getCategoryPill(pontosToDifficulty(card.pontos))
 
   return (
     <article
@@ -141,16 +142,21 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
           <span>Sem checklist</span>
         )}
         <span className="mx-1.5 text-gray-300">•</span>
+        <span>{card.pontos} pts</span>
+        <span className="mx-1.5 text-gray-300">•</span>
         <span>
           {card.comments.length} comentário{card.comments.length === 1 ? '' : 's'}
         </span>
       </p>
 
       <div className="mt-4 flex items-end justify-between gap-2 border-t border-gray-50 pt-3">
-        <div className="flex items-center gap-1.5 text-gray-400" title={`Prioridade: ${card.difficulty}`}>
-          <PriorityGlyph difficulty={card.difficulty} />
+        <div
+          className="flex items-center gap-1.5 text-gray-400"
+          title={`${card.pontos} pts (Fibonacci)`}
+        >
+          <PriorityGlyph difficulty={pontosToDifficulty(card.pontos)} />
           <span className="text-[10px] font-medium uppercase tracking-wide text-gray-400">
-            {card.difficulty}
+            {card.pontos} pts
           </span>
         </div>
         <div

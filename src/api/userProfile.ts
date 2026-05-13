@@ -1,4 +1,3 @@
-/** Extrai nome amigável do payload de GET /auth/me. */
 export function displayNameFromMePayload(data: unknown): string {
   if (!data || typeof data !== 'object') return 'Usuário'
   const o = data as Record<string, unknown>
@@ -7,7 +6,6 @@ export function displayNameFromMePayload(data: unknown): string {
   return 'Usuário'
 }
 
-/** UUID do usuário para `autorId` em comentários. */
 export function userIdFromMePayload(data: unknown): string | null {
   if (!data || typeof data !== 'object') return null
   const o = data as Record<string, unknown>

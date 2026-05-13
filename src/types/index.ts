@@ -9,6 +9,8 @@ export type ColumnStatus =
 
 export type CardDifficulty = 'Baixa' | 'Média' | 'Alta'
 
+export type FibonacciPoints = 1 | 2 | 3 | 5 | 8 | 13
+
 export type ChecklistItem = {
   id: string
   text: string
@@ -18,7 +20,7 @@ export type ChecklistItem = {
 export type CardComment = {
   id: string
   text: string
-  createdAt: number // unix ms
+  createdAt: number
 }
 
 export type KanbanCard = {
@@ -27,6 +29,7 @@ export type KanbanCard = {
   description: string
   assignee: string
   difficulty: CardDifficulty
+  pontos: FibonacciPoints
   checklists: ChecklistItem[]
   developmentTime: string
   comments: CardComment[]
@@ -38,11 +41,15 @@ export type KanbanColumn = {
   title: string
 }
 
-/** Snapshot de uma sprint finalizada (quadro completo no momento do “Complete Sprint”). */
 export type CompletedSprintRecord = {
   id: string
   name: string
   endedAt: number
+  startedAt?: number
   cards: KanbanCard[]
+  cardsTotal?: number
+  cardsDone?: number
+  checklistTotal?: number
+  checklistDone?: number
 }
 
