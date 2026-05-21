@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Board from '../components/Board/Board'
 import {
+  authMe,
   createWorkspace,
   extractWorkspaceList,
   getStoredToken,
@@ -8,8 +9,10 @@ import {
   isApiConfigured,
   isPlanLimitError,
   listWorkspaces,
+  perfilFromMePayload,
   pickWorkspaceId,
   searchWorkspaceCards,
+  type UserPerfil,
 } from '../api'
 import { useBillingPlan } from '../hooks/useBillingPlan'
 import { useKanban } from '../hooks/useKanban'
@@ -63,6 +66,7 @@ export default function Home({ userName, onLogout }: HomeProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchHits, setSearchHits] = useState<string[] | null>(null)
   const [showBilling, setShowBilling] = useState(false)
+  const [viewerPerfil, setViewerPerfil] = useState<UserPerfil | undefined>(undefined)
 
   const apiSession = isApiConfigured() && Boolean(getStoredToken())
   const useRemote = apiSession && Boolean(workspaceId)
@@ -73,6 +77,25 @@ export default function Home({ userName, onLogout }: HomeProps) {
   const sidebarPlanLabel = apiSession ? planLabelFromSnapshot(billingPlan) : null
   const sprintHistoryEnabled = apiSession ? (billingPlan?.sprintHistoryEnabled ?? true) : true
   const showAds = Boolean(apiSession && billingPlan?.showAds)
+
+  useEffect(() => {
+    if (!apiSession) {
+      setViewerPerfil(undefined)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const me = await authMe()
+        if (!cancelled) setViewerPerfil(perfilFromMePayload(me))
+      } catch {
+        if (!cancelled) setViewerPerfil('membro')
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [apiSession])
 
   useEffect(() => {
     if (!apiSession) return
@@ -175,7 +198,7 @@ export default function Home({ userName, onLogout }: HomeProps) {
       return
     }
     const ok = window.confirm(
-      'Tem certeza que deseja finalizar a sprint?\n\nO estado atual do quadro será salvo no histórico (Performance, Evolução e Lista de Sprints) e um novo quadro em branco será aberto.',
+      'Tem certeza que deseja finalizar a sprint?\n\nO estado atual do quadro será salvo no histórico (Performance e Evolução) e um novo quadro em branco será aberto.',
     )
     if (!ok) return
     try {
@@ -297,7 +320,7 @@ export default function Home({ userName, onLogout }: HomeProps) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#F4F5F7]">
+    <div className="flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-[#F4F5F7] lg:flex-row">
       <SidebarMenu
         selected={section}
         onSelect={setSection}
@@ -305,7 +328,7 @@ export default function Home({ userName, onLogout }: HomeProps) {
         onOpenBilling={apiSession ? openBilling : undefined}
       />
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {showAds ? (
           <div className="border-b border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50/80 px-4 py-2.5 text-center">
             <p className="text-xs text-amber-950/90">
@@ -392,7 +415,7 @@ export default function Home({ userName, onLogout }: HomeProps) {
         <main
           id="main-content"
           tabIndex={-1}
-          className="flex-1 overflow-auto p-4 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fuchsia-400/25 lg:p-6"
+          className="min-h-0 flex-1 overflow-auto p-4 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-fuchsia-400/25 lg:p-6"
         >
           <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -414,6 +437,8 @@ export default function Home({ userName, onLogout }: HomeProps) {
                 selected={section}
                 cards={kanban.cards}
                 completedSprints={kanban.completedSprints}
+                viewerName={userName}
+                viewerPerfil={viewerPerfil}
                 sprintHistoryEnabled={sprintHistoryEnabled}
                 onUpgrade={apiSession ? openBilling : undefined}
                 onApplyPokerEstimate={async (cardId, pontos) => {

@@ -94,7 +94,7 @@ export default function BillingUpgrade({
   const handleCancelPaidPlan = async () => {
     if (!plan || plan.planType === 'FREE') return
     const ok = window.confirm(
-      'Cancelar assinatura paga?\n\nConforme os Termos de Uso: o cancelamento evita novas cobranças futuras; em regra não há reembolso de períodos já iniciados. Deseja continuar?',
+      'Deseja cancelar o plano?\n\nVocê deixa de ser cobrado nas próximas renovações. O acesso aos recursos do plano pago permanece até o fim do período já contratado.',
     )
     if (!ok) return
     setError(null)
@@ -150,7 +150,7 @@ export default function BillingUpgrade({
             </button>
             <h1 className="text-2xl font-bold tracking-tight text-gray-900">Planos e pagamento</h1>
             <p className="mt-1 text-sm text-gray-500">
-              Escolha o plano e o período. Em desenvolvimento, use a confirmação mock após o checkout.
+              Escolha o plano e o período de cobrança que melhor se encaixa na sua equipe.
             </p>
           </div>
           <div className="rounded-2xl border border-gray-100 bg-white px-4 py-3 shadow-sm">
@@ -260,53 +260,48 @@ export default function BillingUpgrade({
         </div>
 
         {checkout ? (
-          <div className="mt-8 rounded-2xl border border-amber-100 bg-amber-50/80 p-6 shadow-sm">
-            <h3 className="text-sm font-bold text-amber-950">Pagamento pendente</h3>
-            <p className="mt-2 text-sm text-amber-900/90">
+          <div className="mt-8 rounded-2xl border border-fuchsia-100 bg-gradient-to-br from-fuchsia-50/60 via-white to-white p-6 shadow-card">
+            <h3 className="text-sm font-bold text-gray-900">Pagamento pendente</h3>
+            <p className="mt-2 text-sm text-gray-600">
               Valor:{' '}
-              <strong>
+              <strong className="text-gray-900">
                 {formatBRLFromCents(checkout.amountCents)} {checkout.currency}
               </strong>
-              · Status: <strong>{checkout.status}</strong>
+              {' '}
+              · Aguardando confirmação
             </p>
-            {checkout.hint ? (
-              <p className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-xs text-amber-900/80">
-                {checkout.hint}
-              </p>
-            ) : null}
-            <p className="mt-2 font-mono text-xs text-amber-800/80">paymentId: {checkout.paymentId}</p>
             <button
               type="button"
               disabled={confirmBusy}
               onClick={() => void runConfirmMock()}
-              className="mt-4 rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-semibold text-amber-950 shadow-sm transition hover:bg-amber-50 disabled:opacity-60"
+              className="kf-btn mt-4 rounded-2xl bg-gradient-to-r from-fuchsia-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-fuchsia-500/25 transition hover:opacity-95 disabled:opacity-60"
             >
-              {confirmBusy ? 'Confirmando…' : 'Confirmar pagamento (mock / dev)'}
+              {confirmBusy ? 'Confirmando…' : 'Confirmar pagamento'}
             </button>
           </div>
         ) : null}
 
         {!planLoading && plan && (plan.planType === 'BASIC' || plan.planType === 'FULL') ? (
-          <div className="mt-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-card">
-            <h3 className="text-sm font-bold text-gray-900">Cancelar plano</h3>
-            <p className="mt-2 text-sm leading-relaxed text-gray-600">
-              Você pode solicitar o cancelamento a qualquer momento (itens 4.1 a 4.5 dos Termos de Uso).
-              Se o servidor ainda não tiver o endpoint de cancelamento, use o e-mail abaixo.
+          <div className="mt-10 rounded-2xl border border-gray-100 bg-white p-6 shadow-card">
+            <h3 className="text-sm font-bold text-gray-900">Gerenciar assinatura</h3>
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-gray-500">
+              O cancelamento interrompe novas cobranças. Você continua com os benefícios do plano até o fim do
+              período já pago.
             </p>
-            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
               <button
                 type="button"
                 disabled={cancelBusy}
                 onClick={() => void handleCancelPaidPlan()}
-                className="rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-60"
+                className="kf-btn rounded-2xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:bg-gray-50 disabled:opacity-60"
               >
-                {cancelBusy ? 'Enviando…' : 'Cancelar assinatura'}
+                {cancelBusy ? 'Processando…' : 'Cancelar plano'}
               </button>
               <a
-                className="text-center text-sm font-semibold text-fuchsia-700 underline decoration-fuchsia-300 underline-offset-2 hover:text-fuchsia-900 sm:text-left"
+                className="text-center text-sm font-medium text-gray-500 transition hover:text-fuchsia-700 sm:text-left"
                 href={`mailto:${TERMS_SUPPORT_EMAIL}?subject=${encodeURIComponent('Cancelamento de plano Kanflow')}`}
               >
-                Ou enviar e-mail ao suporte
+                Precisa de ajuda? Fale com o suporte
               </a>
             </div>
           </div>
@@ -321,9 +316,6 @@ export default function BillingUpgrade({
           </div>
         ) : null}
 
-        <p className="mt-10 text-center text-xs text-gray-400">
-          Em produção o fluxo usará o gateway de pagamento; o botão mock só existe para integração local.
-        </p>
       </div>
     </main>
   )

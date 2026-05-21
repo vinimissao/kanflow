@@ -81,6 +81,7 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
   const totalChecklist = card.checklists.length
   const doneChecklist = card.checklists.filter((item) => item.done).length
   const category = getCategoryPill(pontosToDifficulty(card.pontos))
+  const description = card.description.trim()
 
   return (
     <article
@@ -90,12 +91,12 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
       }}
       onClick={() => onSelect?.(card.id)}
       className={[
-        'group relative rounded-2xl border border-gray-100/80 bg-white p-4 shadow-card',
-        'cursor-pointer transition-shadow duration-200 hover:shadow-md',
+        'group relative flex w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-gray-100/80 bg-white p-4 shadow-card',
+        'min-h-[148px] cursor-pointer transition-shadow duration-200 hover:shadow-md',
         isDragging ? 'opacity-0' : 'opacity-100',
       ].join(' ')}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex shrink-0 items-start justify-between gap-3">
         <span
           className={[
             'inline-flex max-w-[85%] rounded-full px-2.5 py-0.5 text-[11px] font-semibold tracking-tight',
@@ -128,12 +129,16 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
         </button>
       </div>
 
-      <h3 className="mt-2.5 line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-gray-900">
-        {card.title}
-      </h3>
-      <p className="mt-1.5 line-clamp-2 text-[13px] leading-relaxed text-gray-500">{card.description}</p>
+      <div className="mt-2 min-h-0 flex-1 overflow-hidden">
+        <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-gray-900">
+          {card.title || 'Sem título'}
+        </h3>
+        {description ? (
+          <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-gray-500">{description}</p>
+        ) : null}
+      </div>
 
-      <p className="mt-3 text-[11px] font-medium text-gray-400">
+      <p className="mt-2 shrink-0 text-[11px] font-medium text-gray-400">
         {totalChecklist > 0 ? (
           <span>
             Checklist {doneChecklist}/{totalChecklist}
@@ -149,7 +154,7 @@ export default function KanbanCardView({ card, onSelect }: CardProps) {
         </span>
       </p>
 
-      <div className="mt-4 flex items-end justify-between gap-2 border-t border-gray-50 pt-3">
+      <div className="mt-2 flex shrink-0 items-end justify-between gap-2 border-t border-gray-50 pt-2.5">
         <div
           className="flex items-center gap-1.5 text-gray-400"
           title={`${card.pontos} pts (Fibonacci)`}

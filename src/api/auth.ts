@@ -10,7 +10,7 @@ export type AuthRegisterBody = {
   name: string
   email: string
   password: string
-  perfil?: 'admin' | 'membro' | 'visualizador'
+  perfil?: 'admin' | 'membro'
 }
 
 export type ChangePasswordBody = {

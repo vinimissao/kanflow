@@ -6,7 +6,13 @@ export {
   clearStoredToken,
 } from './token'
 export * from './auth'
-export { displayNameFromMePayload, userIdFromMePayload } from './userProfile'
+export {
+  displayNameFromMePayload,
+  isAdminPerfil,
+  perfilFromMePayload,
+  userIdFromMePayload,
+  type UserPerfil,
+} from './userProfile'
 export * from './sessionUser'
 export * from './tempoEstimado'
 export * from './billing'

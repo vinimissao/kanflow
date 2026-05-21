@@ -20,7 +20,7 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [perfil, setPerfil] = useState<'admin' | 'membro' | 'visualizador'>('admin')
+  const [perfil, setPerfil] = useState<'admin' | 'membro'>('membro')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [showTermsModal, setShowTermsModal] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -157,13 +157,12 @@ export default function Cadastro({ onCadastro, onGoLogin }: CadastroProps) {
                   id="cadastro-perfil"
                   value={perfil}
                   onChange={(e) =>
-                    setPerfil(e.target.value as 'admin' | 'membro' | 'visualizador')
+                    setPerfil(e.target.value as 'admin' | 'membro')
                   }
                   className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none transition focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
                 >
                   <option value="admin">admin</option>
                   <option value="membro">membro</option>
-                  <option value="visualizador">visualizador</option>
                 </select>
               </div>
             ) : null}

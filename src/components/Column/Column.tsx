@@ -18,7 +18,7 @@ type ColumnProps = {
     pontos: FibonacciPoints
     developmentTime: string
     status: ColumnStatus
-  }) => void
+  }) => boolean
 }
 
 export default function Column({
@@ -53,7 +53,7 @@ export default function Column({
 
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    onAddCard({
+    const created = onAddCard({
       title: formTitle,
       description: formDescription,
       assignee: formAssignee,
@@ -61,6 +61,7 @@ export default function Column({
       developmentTime: formDevelopmentTime,
       status,
     })
+    if (!created) return
     resetForm()
     setIsAdding(false)
   }
@@ -69,7 +70,7 @@ export default function Column({
     <section
       ref={setNodeRef}
       className={[
-        'flex min-w-[300px] flex-1 flex-col rounded-2xl border border-gray-200/70 bg-white/50 p-4',
+        'flex w-[300px] shrink-0 flex-col rounded-2xl border border-gray-200/70 bg-white/50 p-4',
         'shadow-sm shadow-gray-900/5 transition-colors duration-200',
         isOver ? 'ring-2 ring-fuchsia-400/50 ring-offset-2 ring-offset-[#F4F5F7]' : 'ring-0',
       ].join(' ')}
@@ -102,20 +103,21 @@ export default function Column({
             <input
               value={formTitle}
               onChange={(e) => setFormTitle(e.target.value)}
-              placeholder="Título"
+              placeholder="Título *"
+              required
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
             <textarea
               value={formDescription}
               onChange={(e) => setFormDescription(e.target.value)}
-              placeholder="Descrição"
+              placeholder="Descrição (opcional)"
               rows={3}
               className="w-full resize-none rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
             <input
               value={formAssignee}
               onChange={(e) => setFormAssignee(e.target.value)}
-              placeholder="Responsável"
+              placeholder="Responsável (opcional)"
               className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none ring-0 transition placeholder:text-gray-400 focus:border-fuchsia-400 focus:ring-2 focus:ring-fuchsia-400/20"
             />
             <div>
@@ -167,7 +169,7 @@ export default function Column({
         </form>
       ) : null}
 
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-4 flex flex-col gap-3 [&>article]:shrink-0">
         {cards.map((card) => (
           <KanbanCardView key={card.id} card={card} onSelect={onSelectCard} />
         ))}

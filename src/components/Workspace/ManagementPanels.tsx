@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { nearestFibonacciPoints } from '../../api'
+import { isAdminPerfil, nearestFibonacciPoints, type UserPerfil } from '../../api'
 import type { CompletedSprintRecord, FibonacciPoints, KanbanCard } from '../../types'
 
 export type WorkspaceSection =
@@ -7,7 +7,6 @@ export type WorkspaceSection =
   | 'performance'
   | 'evolution'
   | 'poker'
-  | 'sprints'
   | 'contributors'
 
 type SidebarMenuProps = {
@@ -21,9 +20,34 @@ type WorkspacePanelProps = {
   selected: WorkspaceSection
   cards: KanbanCard[]
   completedSprints: CompletedSprintRecord[]
+  viewerName?: string
+  viewerPerfil?: UserPerfil
   sprintHistoryEnabled?: boolean
   onUpgrade?: () => void
   onApplyPokerEstimate?: (cardId: string, pontos: FibonacciPoints) => void | Promise<void>
+}
+
+function cardBelongsToViewer(card: KanbanCard, viewerName: string): boolean {
+  const assignee = (card.assignee ?? '').trim().toLowerCase()
+  const viewer = viewerName.trim().toLowerCase()
+  return Boolean(viewer) && assignee === viewer
+}
+
+function filterCardsForViewer(cards: KanbanCard[], viewerName: string | undefined, adminView: boolean): KanbanCard[] {
+  if (adminView || !viewerName?.trim()) return cards
+  return cards.filter((c) => cardBelongsToViewer(c, viewerName))
+}
+
+function filterSprintsForViewer(
+  sprints: CompletedSprintRecord[],
+  viewerName: string | undefined,
+  adminView: boolean,
+): CompletedSprintRecord[] {
+  if (adminView || !viewerName?.trim()) return sprints
+  return sprints.map((s) => ({
+    ...s,
+    cards: s.cards.filter((c) => cardBelongsToViewer(c, viewerName)),
+  }))
 }
 
 const sectionItems: { id: WorkspaceSection; label: string }[] = [
@@ -31,7 +55,6 @@ const sectionItems: { id: WorkspaceSection; label: string }[] = [
   { id: 'performance', label: 'Performance da Sprint' },
   { id: 'evolution', label: 'Gráficos de Evolução' },
   { id: 'poker', label: 'Sprint Poker' },
-  { id: 'sprints', label: 'Lista de Sprints' },
   { id: 'contributors', label: 'Desenvolvimento dos Colaboradores' },
 ]
 
@@ -162,7 +185,7 @@ function PlanHistoryGate({
 export function SidebarMenu({ selected, onSelect, planLabel, onOpenBilling }: SidebarMenuProps) {
   return (
     <aside
-      className="flex w-full shrink-0 flex-col border-b border-white/5 bg-[#121417] lg:sticky lg:top-0 lg:min-h-screen lg:w-64 lg:border-b-0 lg:border-r"
+      className="flex w-full shrink-0 flex-col overflow-y-auto border-b border-white/5 bg-[#121417] lg:h-full lg:min-h-0 lg:w-64 lg:border-b-0 lg:border-r"
       aria-label="Kanflow — menu lateral"
     >
       <div className="border-b border-white/5 px-4 py-5">
@@ -230,52 +253,74 @@ export function WorkspacePanel({
   selected,
   cards,
   completedSprints,
+  viewerName,
+  viewerPerfil,
   sprintHistoryEnabled = true,
   onUpgrade,
   onApplyPokerEstimate,
 }: WorkspacePanelProps) {
+  const adminView = isAdminPerfil(viewerPerfil)
+  const scopedCards = useMemo(
+    () => filterCardsForViewer(cards, viewerName, adminView),
+    [cards, viewerName, adminView],
+  )
+  const scopedSprints = useMemo(
+    () => filterSprintsForViewer(completedSprints, viewerName, adminView),
+    [completedSprints, viewerName, adminView],
+  )
   const sprintRows = useMemo<SprintRow[]>(
-    () => buildSprintRows(completedSprints, cards),
-    [completedSprints, cards],
+    () => buildSprintRows(scopedSprints, scopedCards),
+    [scopedSprints, scopedCards],
   )
   const completedHistoryDesc = useMemo(
-    () => [...completedSprints].sort((a, b) => b.endedAt - a.endedAt),
-    [completedSprints],
+    () => [...scopedSprints].sort((a, b) => b.endedAt - a.endedAt),
+    [scopedSprints],
   )
   const contributors = useMemo(() => {
-    const byPerson = new Map<string, { total: number; done: number; checklistDone: number; checklistTotal: number }>()
-    cards.forEach((card) => {
-      const current = byPerson.get(card.assignee) ?? { total: 0, done: 0, checklistDone: 0, checklistTotal: 0 }
+    const byPerson = new Map<
+      string,
+      { total: number; done: number; pontos: number; checklistDone: number; checklistTotal: number }
+    >()
+    scopedCards.forEach((card) => {
+      const name = (card.assignee ?? '').trim() || 'Sem responsável'
+      const current = byPerson.get(name) ?? {
+        total: 0,
+        done: 0,
+        pontos: 0,
+        checklistDone: 0,
+        checklistTotal: 0,
+      }
       const checklistDone = card.checklists.filter((item) => item.done).length
       const checklistTotal = card.checklists.length
       current.total += 1
       current.done += card.status === 'done' ? 1 : 0
+      current.pontos += card.pontos
       current.checklistDone += checklistDone
       current.checklistTotal += checklistTotal
-      byPerson.set(card.assignee, current)
+      byPerson.set(name, current)
     })
     return [...byPerson.entries()]
       .map(([name, data]) => ({
         name,
         ...data,
-        score: data.done * 5 + data.checklistDone,
+        score: data.pontos,
       }))
       .sort((a, b) => b.score - a.score)
-  }, [cards])
+  }, [scopedCards])
 
-  const paidHistorySections: WorkspaceSection[] = ['performance', 'evolution', 'sprints']
+  const paidHistorySections: WorkspaceSection[] = ['performance', 'evolution']
   if (paidHistorySections.includes(selected) && !sprintHistoryEnabled) {
     return <PlanHistoryGate onUpgrade={onUpgrade} />
   }
 
   if (selected === 'performance') {
-    const total = cards.length
-    const done = cards.filter((card) => card.status === 'done').length
-    const inProgress = cards.filter(
+    const total = scopedCards.length
+    const done = scopedCards.filter((card) => card.status === 'done').length
+    const inProgress = scopedCards.filter(
       (card) => card.status === 'inDev' || card.status === 'codeReview' || card.status === 'inTest',
     ).length
-    const checklistTotal = cards.reduce((sum, card) => sum + card.checklists.length, 0)
-    const checklistDone = cards.reduce(
+    const checklistTotal = scopedCards.reduce((sum, card) => sum + card.checklists.length, 0)
+    const checklistDone = scopedCards.reduce(
       (sum, card) => sum + card.checklists.filter((item) => item.done).length,
       0,
     )
@@ -285,7 +330,11 @@ export function WorkspacePanel({
     return (
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-card">
         <h3 className="text-lg font-bold text-gray-900">Performance da Sprint</h3>
-        <p className="mt-1 text-sm text-gray-500">Indicadores do quadro atual e histórico de sprints finalizadas.</p>
+        <p className="mt-1 text-sm text-gray-500">
+          {adminView
+            ? 'Indicadores do quadro atual e histórico de sprints finalizadas.'
+            : 'Indicadores apenas dos seus cards no quadro e no histórico.'}
+        </p>
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-2xl bg-[#F4F5F7] p-4">
             <p className="text-xs font-medium text-gray-500">Cards totais</p>
@@ -331,9 +380,9 @@ export function WorkspacePanel({
         <div className="mt-8 border-t border-gray-100 pt-6">
           <h4 className="text-sm font-bold text-gray-900">Sprints finalizadas</h4>
           <p className="mt-1 text-sm text-gray-500">
-            {completedSprints.length === 0
+            {scopedSprints.length === 0
               ? 'Nenhuma sprint finalizada ainda. Use “Complete Sprint” no topo para salvar o quadro no histórico.'
-              : `${completedSprints.length} sprint(s) registrada(s).`}
+              : `${scopedSprints.length} sprint(s) registrada(s).`}
           </p>
           {completedHistoryDesc.length > 0 ? (
             <ul className="mt-4 space-y-2">
@@ -428,62 +477,21 @@ export function WorkspacePanel({
     return <SprintPoker cards={cards} onApplyPokerEstimate={onApplyPokerEstimate} />
   }
 
-  if (selected === 'sprints') {
-    return (
-      <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-card">
-        <h3 className="text-lg font-bold text-gray-900">Lista de Todas as Sprints</h3>
-        <p className="mt-1 text-sm text-gray-500">Sprints finalizadas (histórico) e, se aplicável, o quadro atual.</p>
-        {cards.length > 0 ? (
-          <div className="mt-4 rounded-2xl border border-dashed border-fuchsia-200 bg-fuchsia-50/40 p-4">
-            <p className="font-semibold text-gray-900">Sprint atual (quadro em andamento)</p>
-            <p className="mt-1 text-sm text-gray-500">
-              {cards.length} cards • estimativa aproximada:{' '}
-              {cards.reduce((sum, card) => sum + parseHours(card.developmentTime), 0)}h
-            </p>
-          </div>
-        ) : null}
-        <div className="mt-4 space-y-3">
-          {completedHistoryDesc.length === 0 ? (
-            <p className="text-sm text-gray-500">
-              Nenhuma sprint finalizada. Use “Complete Sprint” para registrar o quadro aqui.
-            </p>
-          ) : (
-            completedHistoryDesc.map((sprint) => {
-              const totalC = sprintCardsTotal(sprint)
-              const doneC = sprintCardsDone(sprint)
-              const pct = sprintCardsPercent(sprint)
-              const hours =
-                sprint.cards.length > 0
-                  ? sprint.cards.reduce((sum, card) => sum + parseHours(card.developmentTime), 0)
-                  : null
-              const checklistLine =
-                typeof sprint.checklistTotal === 'number' && sprint.checklistTotal > 0
-                  ? ` • checklist ${sprint.checklistDone ?? 0}/${sprint.checklistTotal} (${sprintChecklistPercent(sprint)}%)`
-                  : ''
-              return (
-                <div key={sprint.id} className="rounded-2xl border border-gray-100 bg-[#F4F5F7] p-4">
-                  <p className="font-semibold text-gray-900">{sprint.name}</p>
-                  <p className="mt-0.5 text-xs text-gray-400">Encerrada em {formatSprintDate(sprint.endedAt)}</p>
-                  <p className="mt-1 text-sm text-gray-500">
-                    {totalC} cards • {doneC} concluídos ({pct}%)
-                    {checklistLine}
-                    {hours !== null ? ` • estimativa ~${hours}h` : ''}
-                  </p>
-                </div>
-              )
-            })
-          )}
-        </div>
-      </div>
-    )
-  }
-
   if (selected === 'contributors') {
     return (
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-card">
         <h3 className="text-lg font-bold text-gray-900">Desenvolvimento dos Colaboradores</h3>
-        <p className="mt-1 text-sm text-gray-500">Ranking por entregas e avanço em checklists.</p>
+        <p className="mt-1 text-sm text-gray-500">
+          {adminView
+            ? 'Ranking pela soma dos pontos Fibonacci dos cards de cada responsável (igual ao quadro).'
+            : 'Seus pontos e progresso nos cards em que é responsável.'}
+        </p>
         <div className="mt-5 space-y-2">
+          {contributors.length === 0 ? (
+            <p className="rounded-2xl border border-gray-100 bg-[#F4F5F7] p-4 text-sm text-gray-500">
+              Nenhum card atribuído a si no quadro atual.
+            </p>
+          ) : null}
           {contributors.map((person) => {
             const checklistPercent =
               person.checklistTotal > 0 ? Math.round((person.checklistDone / person.checklistTotal) * 100) : 0
@@ -494,7 +502,7 @@ export function WorkspacePanel({
                   <p className="text-sm font-bold text-fuchsia-700">{person.score} pts</p>
                 </div>
                 <p className="mt-1 text-xs text-gray-500">
-                  {person.done} cards concluídos • {person.total} cards totais • checklist {checklistPercent}%
+                  {person.done}/{person.total} cards concluídos • checklist {checklistPercent}%
                 </p>
               </div>
             )

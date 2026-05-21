@@ -7,10 +7,10 @@ Referência única: método, URL, body JSON e headers. O código que chama a API
 | Ambiente | Base | Exemplo final |
 |----------|------|----------------|
 | **Dev com proxy (recomendado)** | `http://localhost:5173/api` | `http://localhost:5173/api/auth/login` |
-| **Dev com URL absoluta** | `VITE_API_URL` + `/api` | `http://127.0.0.1:9090/api/auth/login` |
+| **Dev com URL absoluta** | `VITE_API_URL` + `/api` | `http://127.0.0.1:8080/api/auth/login` |
 
-- Sem `VITE_API_URL` em dev: o front usa path **`/api`** no mesmo host do Vite (`:5173`). O Vite encaminha para o Spring (`vite.config.ts` → `VITE_PROXY_TARGET`, default `http://127.0.0.1:9090`).
-- Com `VITE_API_URL=http://127.0.0.1:9090`: as chamadas vão direto para `http://127.0.0.1:9090/api/...` (CORS tem de estar ok no back).
+- Sem `VITE_API_URL` em dev: o front usa path **`/api`** no mesmo host do Vite (`:5173`). O Vite encaminha para o Spring (`vite.config.ts` → `VITE_PROXY_TARGET`, default `http://127.0.0.1:8080`).
+- Com `VITE_API_URL=http://127.0.0.1:8080`: as chamadas vão direto para `http://127.0.0.1:8080/api/...` (CORS tem de estar ok no back).
 - `VITE_DEMO_LOCAL=true`: API desligada (`getApiRoot()` vazio).
 
 ## Headers (regra geral)
@@ -38,7 +38,7 @@ O `apiFetch` do projeto só define `Content-Type: application/json` quando a op�
 }
 ```
 
-- `perfil`: `admin` | `membro` | `visualizador`
+- `perfil`: `admin` | `membro`
 
 ### `POST /api/auth/login` — sem Bearer
 

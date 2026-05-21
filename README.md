@@ -26,11 +26,11 @@ Este repositório contém o **front-end** da solução. A persistência em banco
 ```
 Navegador (React SPA :5173 em dev)
     → pedidos HTTP para /api/...
-    → em desenvolvimento: proxy do Vite encaminha para o Spring (:9090 por padrão)
+    → em desenvolvimento: proxy do Vite encaminha para o Spring (:8080 por padrão)
     → Spring persiste em banco (ex.: PostgreSQL), conforme configuração do back-end
 ```
 
-- **Desenvolvimento recomendado:** front em `http://localhost:5173`, API em outra porta (ex. `9090`). O Vite faz **proxy** de `/api` para o Spring, evitando CORS entre origens diferentes.
+- **Desenvolvimento recomendado:** front em `http://localhost:5173`, API em outra porta (ex. `8080`). O Vite faz **proxy** de `/api` para o Spring, evitando CORS entre origens diferentes.
 - **Alternativa:** definir `VITE_API_URL` e chamar a API diretamente (o back-end precisa liberar CORS para a origem do front).
 - **Modo demo:** `VITE_DEMO_LOCAL=true` desliga chamadas à API (quadro local para testes de UI).
 
@@ -49,7 +49,7 @@ Na documentação técnica do projeto ([`RELATORIO_TECNICO_KANFLOW.md`](RELATORI
 1. Suba o **PostgreSQL** (Docker, serviço local ou nuvem) conforme a equipe definiu no **repositório do back-end Spring**.
 2. Configure a **URL JDBC**, usuário e senha no `application.properties` / `application.yml` do Spring (variáveis de ambiente ou arquivo local — siga o README do back-end).
 3. Execute as **migrations** ou scripts SQL que o back-end fornecer (Flyway/Liquibase ou SQL manual).
-4. Inicie o **Spring Boot** na porta que o front espera (padrão deste projeto: **9090**, ou ajuste `VITE_PROXY_TARGET`).
+4. Inicie o **Spring Boot** na porta que o front espera (padrão deste projeto: **8080**, ou ajuste `VITE_PROXY_TARGET`).
 
 Sem o back-end e o banco configurados, o front sozinho não grava dados no servidor; use `VITE_DEMO_LOCAL=true` apenas para navegar sem API.
 
@@ -87,15 +87,15 @@ Principais variáveis (ver comentários em [`.env.example`](.env.example)):
 
 | Variável | Uso |
 |----------|-----|
-| `VITE_PROXY_TARGET` | URL do Spring para o proxy em dev (padrão no código: `http://127.0.0.1:9090`). |
-| `VITE_API_URL` | Opcional: base absoluta da API (ex. `http://127.0.0.1:9090`); exige CORS no back-end. |
+| `VITE_PROXY_TARGET` | URL do Spring para o proxy em dev (padrão no código: `http://127.0.0.1:8080`). |
+| `VITE_API_URL` | Opcional: base absoluta da API (ex. `http://127.0.0.1:8080`); exige CORS no back-end. |
 | `VITE_DEMO_LOCAL` | `true` ou `1`: modo demo sem API. |
 
 **Recomendação em dev:** não defina `VITE_API_URL`; deixe só `VITE_PROXY_TARGET` alinhado à porta do Spring.
 
 ### 3. Subir o back-end e o banco
 
-Siga o README do projeto **Spring** da equipe (subir PostgreSQL, aplicar schema, `mvn spring-boot:run` ou equivalente, porta **9090** ou a que você configurar).
+Siga o README do projeto **Spring** da equipe (subir PostgreSQL, aplicar schema, `mvn spring-boot:run` ou equivalente, porta **8080** ou a que você configurar).
 
 ### 4. Servidor de desenvolvimento (front)
 

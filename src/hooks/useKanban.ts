@@ -73,6 +73,7 @@ export function useKanban(options?: UseKanbanOptions) {
   const [cards, setCards] = useState<KanbanCard[]>(() => (remote ? [] : initialCards))
   const cardsRef = useRef(cards)
   cardsRef.current = cards
+  const pendingCreateIds = useRef(new Set<string>())
   const [completedSprints, setCompletedSprints] = useState<CompletedSprintRecord[]>([])
   const [activeId, setActiveId] = useState<string | null>(null)
   const [overColumn, setOverColumn] = useState<ColumnStatus | null>(null)
@@ -88,12 +89,21 @@ export function useKanban(options?: UseKanbanOptions) {
     [cards, activeId],
   )
 
+  const applyFreshCardList = useCallback((fresh: KanbanCard[], previous: KanbanCard[]) => {
+    const merged = mergeCardListWithPrevious(fresh, previous)
+    const mergedIds = new Set(merged.map((c) => c.id))
+    const pending = previous.filter(
+      (c) => pendingCreateIds.current.has(c.id) && !mergedIds.has(c.id),
+    )
+    return [...pending, ...merged]
+  }, [])
+
   const refreshCards = useCallback(async () => {
     if (!remote || !workspaceId) return
     const raw = await listCards(workspaceId)
     const fresh = mapUnknownToKanbanCards(raw)
-    setCards((prev) => mergeCardListWithPrevious(fresh, prev))
-  }, [remote, workspaceId])
+    setCards((prev) => applyFreshCardList(fresh, prev))
+  }, [remote, workspaceId, applyFreshCardList])
 
   const refreshCardById = useCallback(
     async (cardId: string) => {
@@ -138,7 +148,9 @@ export function useKanban(options?: UseKanbanOptions) {
           listWorkspaceSprints(workspaceId),
         ])
         if (cancelled) return
-        setCards((prev) => mergeCardListWithPrevious(mapUnknownToKanbanCards(rawCards), prev))
+        setCards((prev) =>
+          applyFreshCardList(mapUnknownToKanbanCards(rawCards), prev),
+        )
         setCompletedSprints(mapUnknownToCompletedSprints(rawSprints))
       } catch (e) {
         console.error(e)
@@ -147,7 +159,7 @@ export function useKanban(options?: UseKanbanOptions) {
     return () => {
       cancelled = true
     }
-  }, [remote, workspaceId])
+  }, [remote, workspaceId, applyFreshCardList])
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id))
@@ -233,41 +245,17 @@ export function useKanban(options?: UseKanbanOptions) {
     pontos: FibonacciPoints
     developmentTime: string
     status: ColumnStatus
-  }) => {
+  }): boolean => {
     const trimmedTitle = input.title.trim()
     const trimmedDescription = input.description.trim()
-    const trimmedAssignee = input.assignee.trim()
+    const trimmedAssignee = input.assignee.trim() || 'Não atribuído'
     const trimmedDevelopmentTime = input.developmentTime.trim()
 
-    if (!trimmedTitle) return
-    if (!trimmedDescription) return
-    if (!trimmedAssignee) return
+    if (!trimmedTitle) return false
 
-    if (remote && workspaceId) {
-      ;(async () => {
-        try {
-          const horas = parseTempoEstimadoHoras(trimmedDevelopmentTime)
-          await createCard({
-            titulo: trimmedTitle,
-            descricao: trimmedDescription || null,
-            pontos: input.pontos,
-            tempoEstimado: horas > 0 ? horas : null,
-            status: input.status,
-            responsavelId: null,
-            workspaceId,
-            posicao: 0,
-            assignee: trimmedAssignee || null,
-          })
-          await refreshCards()
-        } catch (e) {
-          console.error(e)
-        }
-      })()
-      return
-    }
-
-    const newCard: KanbanCard = {
-      id: createId(),
+    const tempId = createId()
+    const draftCard: KanbanCard = {
+      id: tempId,
       title: trimmedTitle,
       description: trimmedDescription,
       assignee: trimmedAssignee,
@@ -279,7 +267,50 @@ export function useKanban(options?: UseKanbanOptions) {
       status: input.status,
     }
 
-    setCards((prev) => [newCard, ...prev])
+    if (remote && workspaceId) {
+      pendingCreateIds.current.add(tempId)
+      setCards((prev) => [draftCard, ...prev])
+      void (async () => {
+        try {
+          const horas = parseTempoEstimadoHoras(trimmedDevelopmentTime)
+          const raw = await createCard({
+            titulo: trimmedTitle,
+            descricao: trimmedDescription || null,
+            pontos: input.pontos,
+            tempoEstimado: horas > 0 ? horas : null,
+            status: input.status,
+            responsavelId: null,
+            workspaceId,
+            posicao: 0,
+            assignee: trimmedAssignee,
+          })
+          const created = mapUnknownToKanbanCard(raw)
+          pendingCreateIds.current.delete(tempId)
+          if (created) {
+            setCards((prev) =>
+              prev.map((c) =>
+                c.id === tempId ? { ...created, status: input.status } : c,
+              ),
+            )
+          } else {
+            await refreshCards()
+          }
+        } catch (e) {
+          pendingCreateIds.current.delete(tempId)
+          console.error(e)
+          setCards((prev) => prev.filter((c) => c.id !== tempId))
+          const msg =
+            e instanceof HttpError
+              ? e.message
+              : 'Não foi possível criar o card. Verifique a API e tente de novo.'
+          window.alert(msg)
+        }
+      })()
+      return true
+    }
+
+    setCards((prev) => [draftCard, ...prev])
+    return true
   }
 
   const updateCardAssignee = (cardId: string, assignee: string) => {

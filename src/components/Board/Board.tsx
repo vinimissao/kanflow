@@ -125,7 +125,7 @@ export default function Board({ kanban }: BoardProps) {
         ref={boardScrollRef}
         className="overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:thin]"
       >
-        <div className="flex min-w-max gap-5">
+        <div className="flex min-w-max items-start gap-5">
           {columns.map((column) => (
             <Column
               key={column.status}

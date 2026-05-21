@@ -4,9 +4,32 @@ import { columns } from '../data/initialData'
 
 const columnStatusSet = new Set(columns.map((c) => c.status))
 
+const STATUS_ALIASES: Record<string, ColumnStatus> = {
+  backlog: 'backlog',
+  BACKLOG: 'backlog',
+  planned: 'planned',
+  PLANNED: 'planned',
+  readyForDev: 'readyForDev',
+  READY_FOR_DEV: 'readyForDev',
+  ready_for_dev: 'readyForDev',
+  inDev: 'inDev',
+  IN_DEV: 'inDev',
+  in_dev: 'inDev',
+  codeReview: 'codeReview',
+  CODE_REVIEW: 'codeReview',
+  code_review: 'codeReview',
+  inTest: 'inTest',
+  IN_TEST: 'inTest',
+  in_test: 'inTest',
+  done: 'done',
+  DONE: 'done',
+}
+
 function asStatus(v: unknown): ColumnStatus {
-  const s = String(v ?? 'backlog')
-  if (columnStatusSet.has(s as ColumnStatus)) return s as ColumnStatus
+  const raw = String(v ?? 'backlog').trim()
+  if (columnStatusSet.has(raw as ColumnStatus)) return raw as ColumnStatus
+  const mapped = STATUS_ALIASES[raw]
+  if (mapped) return mapped
   return 'backlog'
 }
 
@@ -121,7 +144,13 @@ export function mapUnknownToKanbanCard(raw: unknown): KanbanCard | null {
   if (!id) return null
   const title = String(o.title ?? o.titulo ?? '')
   const description = String(o.description ?? o.descricao ?? '')
-  const assignee = String(o.assignee ?? o.responsavel ?? o.assigneeName ?? '')
+  const responsavelNome =
+    typeof o.responsavel === 'object' && o.responsavel !== null && 'nome' in o.responsavel
+      ? String((o.responsavel as { nome?: string }).nome ?? '')
+      : ''
+  const assignee = String(
+    o.assignee ?? o.responsavelNome ?? responsavelNome ?? o.assigneeName ?? '',
+  ).trim()
 
   const tempoRaw = o.tempoEstimado ?? o.tempoDesenvolvimento ?? o.developmentTime
   const developmentTime =
